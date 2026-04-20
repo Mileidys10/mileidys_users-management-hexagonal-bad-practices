@@ -2,12 +2,15 @@ package com.jcaa.usersmanagement.domain.exception;
 
 public final class InvalidUserStatusException extends DomainException {
 
-  private InvalidUserStatusException(final String message) {
-    super(message);
-  }
+    private InvalidUserStatusException(final String message) {
+        super(message);
+    }
 
-  public static InvalidUserStatusException becauseValueIsInvalid(final String status) {
-    // VIOLACIÓN Regla 10: texto hardcodeado directamente — debe ser una constante.
-    return new InvalidUserStatusException(String.format("The user status '%s' is not valid.", status));
-  }
+    private static final String INVALID_USER_STATUS_MSG = "The user status '%s' is not valid.";
+
+    public static InvalidUserStatusException becauseValueIsInvalid(final String status) {
+
+        return new InvalidUserStatusException(String.format(INVALID_USER_STATUS_MSG, status));
+    }
 }
+
