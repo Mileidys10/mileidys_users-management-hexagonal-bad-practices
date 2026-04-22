@@ -24,7 +24,7 @@ public record EmailDestinationModel(
         validateNotBlank(body, BODY_REQUIRED_MSG);
     }
 
-    private static void validateNotBlank(final String value, final String errorMessage) {
+    private  void validateNotBlank(final String value, final String errorMessage) {
 
         Objects.requireNonNull(value, errorMessage);
 
