@@ -7,36 +7,41 @@ import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.controller.Use
 import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.dto.CreateUserRequest;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
-import java.util.logging.Logger;
+import lombok.extern.java.Log; // Cambiamos a la anotación de Lombok
 
+import java.util.logging.Level;
+
+@Log
 @RequiredArgsConstructor
 public final class CreateUserHandler implements OperationHandler {
 
-  // VIOLACIÓN Regla 4: Logger instanciado manualmente en vez de usar @Log de Lombok.
-  private static final Logger LOGGER = Logger.getLogger(CreateUserHandler.class.getName());
+    private final UserController userController;
+    private final ConsoleIO console;
+    private final UserResponsePrinter printer;
+    private static final String ALREADY_EXISTS_LOG = "Attempted to create a user that already exists.";
+    @Override
+    public void handle() {
 
-  private final UserController userController;
-  private final ConsoleIO console;
-  private final UserResponsePrinter printer;
+        final String id       = console.readRequired("ID                              : ");
+        final String name     = console.readRequired("Name                            : ");
+        final String email    = console.readRequired("Email                           : ");
+        final String password = console.readRequired("Password                        : ");
+        final String role     = console.readRequired("Role (ADMIN / MEMBER / REVIEWER): ");
 
-  @Override
-  public void handle() {
-    final String id       = console.readRequired("ID                              : ");
-    final String name     = console.readRequired("Name                            : ");
-    final String email    = console.readRequired("Email                           : ");
-    final String password = console.readRequired("Password                        : ");
-    final String role     = console.readRequired("Role (ADMIN / MEMBER / REVIEWER): ");
+        try {
 
-    try {
-      final UserResponse created =
-          userController.createUser(new CreateUserRequest(id, name, email, password, role));
-      console.println("\n  User created successfully.");
-      printer.print(created);
-    } catch (final UserAlreadyExistsException exception) {
-      // VIOLACIÓN Regla 6: se loguea el mensaje de la excepción que contiene PII (el email del usuario).
-      // Los datos de negocio/cliente son PII y no deben loguearse nunca.
-      LOGGER.warning("Usuario ya existe: " + exception.getMessage());
-      console.println("  Error: " + exception.getMessage());
+            final UserResponse created =
+                    userController.createUser(new CreateUserRequest(id, name, email, password, role));
+
+            console.println("\n  User created successfully.");
+            printer.print(created);
+
+        } catch (final UserAlreadyExistsException exception) {
+
+            log.log(Level.WARNING, ALREADY_EXISTS_LOG);
+
+
+            console.println("  Error: " + exception.getMessage());
+        }
     }
-  }
 }
