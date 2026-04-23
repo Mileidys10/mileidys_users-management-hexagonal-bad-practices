@@ -9,27 +9,38 @@ import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.dto.UserRespon
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 
+import java.util.logging.Level;
+
 @Log
 @RequiredArgsConstructor
 public final class LoginHandler implements OperationHandler {
 
-  private final UserController userController;
-  private final ConsoleIO console;
-  private final UserResponsePrinter printer;
 
-  @Override
-  public void handle() {
-    final String email    = console.readRequired("Email   : ");
-    final String password = console.readRequired("Password: ");
-    try {
-      final UserResponse user = userController.login(new LoginRequest(email, password));
-      console.println("\n  Login successful. Welcome!");
-      printer.print(user);
-    } catch (final InvalidCredentialsException exception) {
-      // VIOLACIÓN Regla 6: se loguea el email del usuario (PII) al registrar el fallo de login.
-      // Los datos de negocio/cliente son PII y NO deben loguearse nunca.
-      log.warning("Intento de login fallido para email: " + email);
-      console.println("  Error: " + exception.getMessage());
+    private static final String LOGIN_SUCCESS_MSG = "\n  Login successful. Welcome!";
+    private static final String LOGIN_FAILED_LOG = "Failed login attempt detected.";
+    private static final String ERROR_PREFIX = "  Error: ";
+
+    private final UserController userController;
+    private final ConsoleIO console;
+    private final UserResponsePrinter printer;
+
+    @Override
+    public void handle() {
+        final String email    = console.readRequired("Email   : ");
+        final String password = console.readRequired("Password: ");
+
+        try {
+            final UserResponse user = userController.login(new LoginRequest(email, password));
+
+            console.println(LOGIN_SUCCESS_MSG);
+            printer.print(user);
+
+        } catch (final InvalidCredentialsException exception) {
+
+            log.log(Level.WARNING, LOGIN_FAILED_LOG);
+
+
+            console.println(ERROR_PREFIX + exception.getMessage());
+        }
     }
-  }
 }
