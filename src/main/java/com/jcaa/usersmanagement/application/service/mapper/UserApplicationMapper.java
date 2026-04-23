@@ -1,93 +1,65 @@
 package com.jcaa.usersmanagement.application.service.mapper;
 
-import com.jcaa.usersmanagement.application.service.dto.command.CreateUserCommand;
-import com.jcaa.usersmanagement.application.service.dto.command.DeleteUserCommand;
-import com.jcaa.usersmanagement.application.service.dto.command.UpdateUserCommand;
+import com.jcaa.usersmanagement.application.service.dto.command.*;
 import com.jcaa.usersmanagement.application.service.dto.query.GetUserByIdQuery;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
 import com.jcaa.usersmanagement.domain.model.UserModel;
-import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
-import com.jcaa.usersmanagement.domain.valueobject.UserId;
-import com.jcaa.usersmanagement.domain.valueobject.UserName;
-import com.jcaa.usersmanagement.domain.valueobject.UserPassword;
-import java.util.Objects;
+import com.jcaa.usersmanagement.domain.valueobject.*;
+import lombok.experimental.UtilityClass;
 
+import java.util.Objects;
+import java.util.Optional;
+
+@UtilityClass
 public class UserApplicationMapper {
 
-  public static UserModel fromCreateCommandToModel(final CreateUserCommand command) {
-    final String userId    = command.id();
-    final String userName  = command.name();
-    // Clean Code - Regla 24 (consistencia semántica):
-    // El mismo concepto (email del usuario) se llama "correo" aquí
-    // pero "correoElectronico" en fromUpdateCommandToModel, dentro de la MISMA clase.
-    // La regla dice: las mismas ideas deben nombrarse igual en todo el proyecto.
-    // No usar varios nombres para el mismo concepto sin justificación.
-    final String correo    = command.email();
-    final String userPass  = command.password();
-    final String userRole  = command.role();
-
-    return UserModel.create(
-        new UserId(userId),
-        new UserName(userName),
-        new UserEmail(correo),
-        UserPassword.fromPlainText(userPass),
-        UserRole.fromString(userRole));
-  }
-
-  public static UserModel fromUpdateCommandToModel(
-      final UpdateUserCommand command, final UserPassword currentPassword) {
-
-    UserPassword passwordToUse;
-    if (command.password() == null || command.password().isBlank()) {
-      passwordToUse = currentPassword;
-    } else {
-      passwordToUse = UserPassword.fromPlainText(command.password());
+    private static final String EMPTY_ROLE_NAME_MSG= "Role name cannot be empty";
+    private static final String UNKNOW_ROLE_MSG= "Unknown role: ";
+    public static UserModel fromCreateCommandToModel(final CreateUserCommand command) {
+        return UserModel.create(
+                new UserId(command.id()),
+                new UserName(command.name()),
+                new UserEmail(command.email()),
+                UserPassword.fromPlainText(command.password()),
+                UserRole.fromString(command.role()));
     }
 
-    // Clean Code - Regla 24: mismo concepto que "correo" de arriba, pero renombrado
-    // sin razón a "correoElectronico". El lector no puede saber si son conceptos distintos.
-    final String correoElectronico = command.email();
+    public static UserModel fromUpdateCommandToModel(
+            final UpdateUserCommand command, final UserPassword currentPassword) {
 
-    // EFECTO CASCADA de la Regla 15 en UserModel:
-    // Al usar @Data en vez de @Value, el modelo es mutable. El siguiente llamador
-    // podría hacer userToUpdate.setStatus(BLOCKED) en cualquier momento después
-    // de construirlo, sin pasar por ninguna regla de dominio.
-    return new UserModel(
-        new UserId(command.id()),
-        new UserName(command.name()),
-        new UserEmail(correoElectronico),
-        passwordToUse,
-        UserRole.fromString(command.role()),
-        UserStatus.fromString(command.status()));
-  }
+        final UserPassword passwordToUse = (Objects.isNull(command.password()) || command.password().isBlank())
+                ? currentPassword
+                : UserPassword.fromPlainText(command.password());
 
-  public static UserId fromGetUserByIdQueryToUserId(final GetUserByIdQuery query) {
-    return new UserId(query.id());
-  }
-
-  public static UserId fromDeleteCommandToUserId(final DeleteUserCommand command) {
-    return new UserId(command.id());
-  }
-
-  // Clean Code - Regla 21 (no retornar banderas de error):
-  // Este método retorna 1, 2, 3 o -1 como códigos de resultado para representar roles.
-  // La regla dice: no usar valores especiales (-1, null, "ERROR", false) para señalar errores.
-  // El contrato de salida NO diferencia ausencia, falla y éxito:
-  //   - ¿Qué significa -1? ¿Error de parseo? ¿Rol desconocido? ¿No autorizado?
-  //   - El llamador DEBE recordar qué valor representa cada caso — frágil y opaco.
-  // Solución: lanzar IllegalArgumentException o usar Optional<Integer> con semántica clara.
-  public static int roleToCode(final String role) {
-    if (Objects.isNull(role) || role.isBlank()) {
-      return -1;
+        return new UserModel(
+                new UserId(command.id()),
+                new UserName(command.name()),
+                new UserEmail(command.email()),
+                passwordToUse,
+                UserRole.fromString(command.role()),
+                UserStatus.fromString(command.status()));
     }
-    if ("ADMIN".equalsIgnoreCase(role)) {
-      return 1;
-    } else if ("MEMBER".equalsIgnoreCase(role)) {
-      return 2;
-    } else if ("REVIEWER".equalsIgnoreCase(role)) {
-      return 3;
+
+    public static UserId fromGetUserByIdQueryToUserId(final GetUserByIdQuery query) {
+        return new UserId(query.id());
     }
-    return -1;
-  }
+
+    public static UserId fromDeleteCommandToUserId(final DeleteUserCommand command) {
+        return new UserId(command.id());
+    }
+
+
+    public static int getRoleCode(final String roleName) {
+        if (Objects.isNull(roleName) || roleName.isBlank()) {
+            throw new IllegalArgumentException(EMPTY_ROLE_NAME_MSG);
+        }
+
+        return switch (roleName.toUpperCase()) {
+            case "ADMIN"    -> 1;
+            case "MEMBER"   -> 2;
+            case "REVIEWER" -> 3;
+            default -> throw new IllegalArgumentException(UNKNOW_ROLE_MSG + roleName);
+        };
+    }
 }
