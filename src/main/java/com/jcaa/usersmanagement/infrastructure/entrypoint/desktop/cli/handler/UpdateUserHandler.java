@@ -7,38 +7,53 @@ import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.controller.Use
 import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.dto.UpdateUserRequest;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 
+import java.util.logging.Level;
+
+@Log
 @RequiredArgsConstructor
 public final class UpdateUserHandler implements OperationHandler {
 
-  private final UserController userController;
-  private final ConsoleIO console;
-  private final UserResponsePrinter printer;
 
-  @Override
-  public void handle() {
-    // VIOLACIÓN Regla 4: abreviaturas en nombres de variables ("pw" y "upd").
-    // Los nombres deben ser claros y descriptivos, sin abreviaturas.
-    final String id   = console.readRequired("User ID                                       : ");
-    final String name = console.readRequired("New name                                      : ");
-    final String email= console.readRequired("New email                                     : ");
-    final String pw   = console.readOptional("New password (leave blank to keep current)    : ");
-    final String role = console.readRequired("Role   (ADMIN / MEMBER / REVIEWER)            : ");
-    final String status=console.readRequired("Status (ACTIVE / INACTIVE / PENDING / BLOCKED): ");
+    private static final String UPDATE_SUCCESS = "\n  User updated successfully.";
+    private static final String NOT_FOUND_PREFIX = "  Not found: ";
+    private static final String UPDATE_NOT_FOUND_LOG = "Attempted to update a user that does not exist.";
 
-    try {
-      final UserResponse upd = userController.updateUser(
-          new UpdateUserRequest(
-              id,
-              name,
-              email,
-              pw.isBlank() ? null : pw,
-              role,
-              status));
-      console.println("\n  User updated successfully.");
-      printer.print(upd);
-    } catch (final UserNotFoundException exception) {
-      console.println("  Not found: " + exception.getMessage());
+    private final UserController userController;
+    private final ConsoleIO console;
+    private final UserResponsePrinter printer;
+
+    @Override
+    public void handle() {
+
+        final String id       = console.readRequired("User ID                                       : ");
+        final String name     = console.readRequired("New name                                      : ");
+        final String email    = console.readRequired("New email                                     : ");
+        final String password = console.readOptional("New password (leave blank to keep current)    : ");
+        final String role     = console.readRequired("Role   (ADMIN / MEMBER / REVIEWER)            : ");
+        final String status   = console.readRequired("Status (ACTIVE / INACTIVE / PENDING / BLOCKED): ");
+
+        try {
+
+            final UserResponse updatedUser = userController.updateUser(
+                    new UpdateUserRequest(
+                            id,
+                            name,
+                            email,
+                            password.isBlank() ? null : password,
+                            role,
+                            status));
+
+            console.println(UPDATE_SUCCESS);
+            printer.print(updatedUser);
+
+        } catch (final UserNotFoundException exception) {
+
+            log.log(Level.WARNING, UPDATE_NOT_FOUND_LOG);
+
+
+            console.println(NOT_FOUND_PREFIX + exception.getMessage());
+        }
     }
-  }
 }
