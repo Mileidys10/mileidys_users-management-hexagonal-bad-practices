@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 // Los records ya tienen constructor canónico — usar @Builder es redundante e innecesario.
 import lombok.Builder;
 
-@Builder(toBuilder = true)
 public record CreateUserCommand(
     @NotBlank(message = "id must not be blank") String id,
     @NotBlank(message = "name must not be blank")
