@@ -1,6 +1,6 @@
 package com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.cli.handler;
 
-import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
+import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.cli.io.ConsoleIO;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.cli.io.UserResponsePrinter;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.desktop.controller.UserController;
@@ -16,12 +16,8 @@ public final class FindUserByIdHandler implements OperationHandler {
 
   @Override
   public void handle() {
-    final String id = console.readRequired("User ID: ");
-    try {
-      final UserResponse user = userController.findUserById(id);
-      printer.print(user);
-    } catch (final UserNotFoundException exception) {
-      console.println("  Not found: " + exception.getMessage());
-    }
+    final String idInput = console.readRequired("User ID: ");
+    final UserResponse user = userController.findUserById(new UserId(idInput));
+    printer.print(user);
   }
 }
