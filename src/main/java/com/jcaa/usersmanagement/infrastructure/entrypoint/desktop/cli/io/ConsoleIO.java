@@ -7,47 +7,47 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class ConsoleIO {
 
-  private final Scanner scanner;
-  private final PrintStream out;
 
-  public String readRequired(final String prompt) {
-    // VIOLACIÓN Regla 4: nombre abreviado "v" en lugar del nombre descriptivo "value".
-    // Clean Code - Regla 24 (consistencia semántica):
-    // El mismo concepto —"entrada del usuario leída de consola"— se llama "v" aquí
-    // y "r" en readInt(), dentro de la misma clase. Nombres distintos para el mismo
-    // concepto hacen que el lector asuma incorrectamente que son ideas diferentes.
-    String v;
-    do {
-      out.print(prompt);
-      v = scanner.nextLine().trim();
-      if (v.isBlank()) {
-        // VIOLACIÓN Regla 10: texto hardcodeado directamente — debe ser una constante.
-        out.println("  Value cannot be blank. Please try again.");
-      }
-    } while (v.isBlank());
-    return v;
-  }
+    private static final String ERROR_BLANK_VALUE = "  Value cannot be blank. Please try again.";
+    private static final String ERROR_INVALID_NUMBER = "  Invalid input. Please enter a number.";
 
-  public String readOptional(final String prompt) {
-    out.print(prompt);
-    return scanner.nextLine().trim();
-  }
+    private final Scanner scanner;
+    private final PrintStream out;
 
-  public int readInt(final String prompt) {
-    while (true) {
-      out.print(prompt);
-      // VIOLACIÓN Regla 4: nombre abreviado "r" en lugar del nombre descriptivo "rawInput".
-      final String r = scanner.nextLine().trim();
-      try {
-        return Integer.parseInt(r);
-      } catch (final NumberFormatException ignored) {
-        // VIOLACIÓN Regla 10: texto hardcodeado directamente — debe ser una constante.
-        out.println("  Invalid input. Please enter a number.");
-      }
+    public String readRequired(final String prompt) {
+
+        String userInput;
+        do {
+            out.print(prompt);
+            userInput = scanner.nextLine().trim();
+
+            if (userInput.isBlank()) {
+                out.println(ERROR_BLANK_VALUE);
+            }
+        } while (userInput.isBlank());
+
+        return userInput;
     }
-  }
 
-  public void println(final String message) { out.println(message); }
-  public void println() { out.println(); }
-  public void printf(final String format, final Object... args) { out.printf(format, args); }
+    public String readOptional(final String prompt) {
+        out.print(prompt);
+        return scanner.nextLine().trim();
+    }
+
+    public int readInt(final String prompt) {
+        while (true) {
+            out.print(prompt);
+
+            final String userInput = scanner.nextLine().trim();
+            try {
+                return Integer.parseInt(userInput);
+            } catch (final NumberFormatException ignored) {
+                out.println(ERROR_INVALID_NUMBER);
+            }
+        }
+    }
+
+    public void println(final String message) { out.println(message); }
+    public void println() { out.println(); }
+    public void printf(final String format, final Object... args) { out.printf(format, args); }
 }
