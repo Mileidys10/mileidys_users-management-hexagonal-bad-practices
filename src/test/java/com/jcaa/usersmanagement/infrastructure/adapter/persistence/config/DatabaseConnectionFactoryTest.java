@@ -35,12 +35,10 @@ class DatabaseConnectionFactoryTest {
   @Mock private Connection mockConnection;
 
   private DatabaseConfig config;
-  private DatabaseConnectionFactory factory;
 
   @BeforeEach
   void setUp() {
     config = new DatabaseConfig(HOST, PORT, DB_NAME, USERNAME, PASSWORD);
-    factory = new DatabaseConnectionFactory();
   }
 
   @Test
@@ -53,7 +51,7 @@ class DatabaseConnectionFactoryTest {
           .thenReturn(mockConnection);
 
       // Act
-      final Connection result = factory.createConnection(config);
+      final Connection result = DatabaseConnectionFactory.createConnection(config);
 
       // Assert
       assertSame(mockConnection, result);
@@ -72,7 +70,7 @@ class DatabaseConnectionFactoryTest {
           .thenThrow(cause);
 
       // Act & Assert
-      assertThrows(PersistenceException.class, () -> factory.createConnection(config));
+      assertThrows(PersistenceException.class, () -> DatabaseConnectionFactory.createConnection(config));
     }
   }
 }
