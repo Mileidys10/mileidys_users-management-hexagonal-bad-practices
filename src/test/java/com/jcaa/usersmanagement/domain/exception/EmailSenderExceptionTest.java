@@ -8,36 +8,29 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests para EmailSenderException.
  *
- * <p>De paso cubre el constructor de dos argumentos de {@code DomainException} (abstracta),
- * alcanzable sólo a través de {@code becauseSendFailed(cause)}.
+ * <p>Verifica la creación de excepciones por errores SMTP y fallos genéricos de envío,
+ * asegurando que los mensajes y causas se capturen correctamente.
  */
 @DisplayName("EmailSenderException")
 class EmailSenderExceptionTest {
 
-  // ── becauseSmtpFailed()
-
   @Test
-  @DisplayName("becauseSmtpFailed() debe formatear el mensaje incluyendo el email y el error SMTP")
+  @DisplayName("Debe formatear el mensaje incluyendo el email y el error SMTP cuando falla el protocolo")
   void shouldFormatMessageWithEmailAndSmtpError() {
     // Arrange
     final String destinationEmail = "user@example.com";
     final String smtpError = "Connection refused";
 
     // Act
-    final String message =
-        EmailSenderException.becauseSmtpFailed(destinationEmail, smtpError).getMessage();
+    final String message = EmailSenderException.becauseSmtpFailed(destinationEmail, smtpError).getMessage();
 
     // Assert
-    assertAll(
-        "becauseSmtpFailed",
-        () -> assertTrue(message.contains(destinationEmail), "el mensaje debe contener el email"),
-        () -> assertTrue(message.contains(smtpError), "el mensaje debe contener el error SMTP"));
+    assertTrue(message.contains(destinationEmail));
+    assertTrue(message.contains(smtpError));
   }
 
-  // ── becauseSendFailed()
-
   @Test
-  @DisplayName("becauseSendFailed() debe encapsular la causa y producir un mensaje no vacío")
+  @DisplayName("Debe encapsular la causa original y producir un mensaje válido cuando falla el envío")
   void shouldWrapCauseAndProduceNonBlankMessage() {
     // Arrange
     final Throwable cause = new RuntimeException("IO error");
@@ -46,11 +39,7 @@ class EmailSenderExceptionTest {
     final EmailSenderException exception = EmailSenderException.becauseSendFailed(cause);
 
     // Assert
-    assertAll(
-        "becauseSendFailed",
-        () -> assertSame(cause, exception.getCause(), "debe encapsular la causa original"),
-        () ->
-            assertFalse(
-                exception.getMessage().isBlank(), "el mensaje por defecto no debe estar vacío"));
+    assertSame(cause, exception.getCause());
+    assertFalse(exception.getMessage().isBlank());
   }
 }
