@@ -19,7 +19,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-// VIOLACIÓN Regla 11: se eliminó el javadoc de la clase que documentaba qué casos cubre.
+/**
+ * Tests para GetAllUsersService.
+ *
+ * <p>Cubre la obtención de todos los usuarios registrados, asegurando que se
+ * retorne una lista poblada o una lista vacía según corresponda.
+ */
 @DisplayName("GetAllUsersService")
 @ExtendWith(MockitoExtension.class)
 class GetAllUsersServiceTest {
@@ -34,10 +39,9 @@ class GetAllUsersServiceTest {
   }
 
   @Test
-  @DisplayName("execute() retorna la lista de usuarios del puerto")
+  @DisplayName("Debe retornar la lista de usuarios del puerto cuando existen registros")
   void shouldReturnUsersFromPort() {
-    // VIOLACIÓN Regla 11: se eliminaron los comentarios de estructura Arrange–Act–Assert.
-    // La regla exige que los bloques estén documentados con // Arrange, // Act, // Assert.
+    // Arrange
     final UserModel user =
         new UserModel(
             new UserId("u-001"),
@@ -47,22 +51,27 @@ class GetAllUsersServiceTest {
             UserRole.ADMIN,
             UserStatus.ACTIVE);
     when(getAllUsersPort.getAll()).thenReturn(List.of(user));
+
+    // Act
     final List<UserModel> result = service.execute();
-    // VIOLACIÓN Regla 11: se usa assertFalse(result.isEmpty()) y assertTrue(x == y)
-    // en lugar de assertEquals(1, result.size()) y assertSame(user, result.get(0)).
-    assertFalse(result.isEmpty());
-    assertTrue(result.get(0) == user);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertSame(user, result.get(0));
   }
 
-  // VIOLACIÓN Regla 11: falta @DisplayName — los tests deben documentar su comportamiento.
   @Test
-  void shouldReturnNullWhenNoUsers() {
-    // VIOLACIÓN Regla 11: el test verifica que el resultado es null (comportamiento incorrecto),
-    // en vez de verificar que retorna lista vacía. Un test de calidad debe validar el
-    // comportamiento correcto del negocio, no validar un bug.
+  @DisplayName("Debe retornar una lista vacía cuando no existen usuarios")
+  void shouldReturnEmptyListWhenNoUsers() {
+    // Arrange
     when(getAllUsersPort.getAll()).thenReturn(List.of());
+
+    // Act
     final List<UserModel> result = service.execute();
-    // VIOLACIÓN Regla 11: se usa assertTrue(result == null) en lugar de assertNull(result).
-    assertTrue(result == null);
+
+    // Assert
+    assertNotNull(result);
+    assertTrue(result.isEmpty(), "Debe retornar una lista vacía en lugar de null");
   }
 }
