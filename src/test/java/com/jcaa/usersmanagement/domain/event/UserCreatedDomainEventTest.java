@@ -18,18 +18,15 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests para UserCreatedDomainEvent.
  *
- * <p>Estrategia: un @Test por cada comportamiento observable del evento (eventName, occurredOn,
- * user, payload). De paso, cada test ejecuta el constructor heredado de DomainEvent, cubriendo la
- * clase abstracta sin necesidad de una clase separada.
+ * <p>Verifica que el evento de dominio capture correctamente los datos del usuario,
+ * el nombre del evento y el instante en que ocurrió.
  */
-@DisplayName("Test de UserCreatedDomainEvent")
+@DisplayName("UserCreatedDomainEvent")
 class UserCreatedDomainEventTest {
 
-  // ── Arrenge Generales
   private static final String ID = "user-001";
   private static final String NAME = "John Arrieta";
   private static final String EMAIL = "john.arrieta@gmail.com";
-  // fromHash() acepta cualquier string no-null: evitamos el coste de BCrypt en tests
   private static final String HASH = "$2a$12$abcdefghijklmnopqrstuO";
 
   private UserModel user;
@@ -46,10 +43,8 @@ class UserCreatedDomainEventTest {
             UserStatus.ACTIVE);
   }
 
-  // ── eventName
-
   @Test
-  @DisplayName("eventName() debe retornar la constante 'user.created'")
+  @DisplayName("Debe retornar el nombre de evento correcto")
   void shouldHaveEventNameUserCreated() {
     // Arrange
     final UserCreatedDomainEvent event = new UserCreatedDomainEvent(user);
@@ -61,10 +56,8 @@ class UserCreatedDomainEventTest {
     assertEquals("user.created", result);
   }
 
-  // ── occurredOn
-
   @Test
-  @DisplayName("occurredOn() no debe ser nulo y debe quedar acotado al instante de construcción")
+  @DisplayName("Debe registrar el instante de ocurrencia al momento de la creación")
   void shouldRecordOccurredOnAtCreationTime() {
     // Arrange
     final LocalDateTime before = LocalDateTime.now();
@@ -75,19 +68,13 @@ class UserCreatedDomainEventTest {
     final LocalDateTime occurredOn = event.getOccurredOn();
 
     // Assert
-    assertNotNull(occurredOn, "occurredOn no debe ser null");
-    assertFalse(
-        occurredOn.isBefore(before),
-        "occurredOn debe ser >= al instante anterior a la construcción");
-    assertFalse(
-        occurredOn.isAfter(after),
-        "occurredOn debe ser <= al instante posterior a la construcción");
+    assertNotNull(occurredOn);
+    assertFalse(occurredOn.isBefore(before));
+    assertFalse(occurredOn.isAfter(after));
   }
 
-  // ── user()
-
   @Test
-  @DisplayName("user() debe devolver la misma instancia de UserModel recibida en el constructor")
+  @DisplayName("Debe devolver la misma instancia de usuario recibida")
   void shouldReturnSameUserInstance() {
     // Arrange
     final UserCreatedDomainEvent event = new UserCreatedDomainEvent(user);
@@ -99,10 +86,8 @@ class UserCreatedDomainEventTest {
     assertSame(user, result);
   }
 
-  // ── payload()
-
   @Test
-  @DisplayName("payload() debe contener exactamente los cinco campos del usuario")
+  @DisplayName("Debe contener todos los campos del usuario en el payload")
   void shouldReturnPayloadWithAllUserFields() {
     // Arrange
     final UserCreatedDomainEvent event = new UserCreatedDomainEvent(user);
@@ -113,11 +98,11 @@ class UserCreatedDomainEventTest {
     // Assert
     assertAll(
         "payload de UserCreatedDomainEvent",
-        () -> assertEquals(5, payload.size(), "tamaño del mapa"),
-        () -> assertEquals(ID, payload.get("id"), "id"),
-        () -> assertEquals(NAME, payload.get("name"), "name"),
-        () -> assertEquals(EMAIL, payload.get("email"), "email"),
-        () -> assertEquals(UserRole.MEMBER.name(), payload.get("role"), "role"),
-        () -> assertEquals(UserStatus.ACTIVE.name(), payload.get("status"), "status"));
+        () -> assertEquals(5, payload.size()),
+        () -> assertEquals(ID, payload.get("id")),
+        () -> assertEquals(NAME, payload.get("name")),
+        () -> assertEquals(EMAIL, payload.get("email")),
+        () -> assertEquals(UserRole.MEMBER.name(), payload.get("role")),
+        () -> assertEquals(UserStatus.ACTIVE.name(), payload.get("status")));
   }
 }
