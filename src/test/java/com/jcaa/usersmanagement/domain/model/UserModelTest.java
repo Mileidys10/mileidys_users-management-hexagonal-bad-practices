@@ -15,14 +15,12 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests para UserModel.
  *
- * <p>Sólo se testean los tres métodos con lógica real: {@code create()} que fija el estado inicial
- * PENDING, {@code activate()} y {@code deactivate()} que producen transiciones de estado. El
- * constructor trivial y los getters quedan cubiertos como efecto secundario de estos tests.
+ * <p>Verifica la creación de usuarios con estado inicial pendiente y las transiciones
+ * de estado a activo e inactivo, asegurando la inmutabilidad de la instancia original.
  */
 @DisplayName("UserModel")
 class UserModelTest {
 
-  // ── Arrange (variables globales para la mayoría de las test)
   private static final String HASH = "$2a$12$abcdefghijklmnopqrstuO";
 
   private UserId userId;
@@ -38,10 +36,8 @@ class UserModelTest {
     password = UserPassword.fromHash(HASH);
   }
 
-  // ── create()
-
   @Test
-  @DisplayName("create() debe fijar status PENDING y preservar todos los campos recibidos")
+  @DisplayName("Debe fijar el estado PENDING y preservar los campos al crear un nuevo usuario")
   void shouldCreateUserWithPendingStatusAndPreserveAllFields() {
     // Act
     final UserModel model =
@@ -49,16 +45,13 @@ class UserModelTest {
 
     // Assert
     assertAll(
-        "create() factory",
-        () ->
-            assertEquals(UserStatus.PENDING, model.getStatus(), "status debe iniciar como PENDING"),
-        () -> assertSame(password, model.getPassword(), "password debe preservarse"));
+        "Verificación de creación de usuario",
+        () -> assertEquals(UserStatus.PENDING, model.getStatus()),
+        () -> assertSame(password, model.getPassword()));
   }
 
-  // ── activate()
-
   @Test
-  @DisplayName("activate() debe retornar nueva instancia con ACTIVE y demás campos intactos")
+  @DisplayName("Debe retornar una nueva instancia con estado ACTIVE al activar el usuario")
   void shouldActivateAndPreserveOtherFields() {
     // Arrange
     final UserModel pending =
@@ -69,19 +62,17 @@ class UserModelTest {
 
     // Assert
     assertAll(
-        "resultado de activate()",
-        () -> assertNotSame(pending, activated, "debe ser una nueva instancia"),
-        () -> assertEquals(UserStatus.ACTIVE, activated.getStatus(), "status debe ser ACTIVE"),
-        () -> assertSame(userId, activated.getId(), "id debe preservarse"),
-        () -> assertSame(userName, activated.getName(), "name debe preservarse"),
-        () -> assertSame(userEmail, activated.getEmail(), "email debe preservarse"),
-        () -> assertEquals(UserRole.REVIEWER, activated.getRole(), "role debe preservarse"));
+        "Verificación de activación de usuario",
+        () -> assertNotSame(pending, activated),
+        () -> assertEquals(UserStatus.ACTIVE, activated.getStatus()),
+        () -> assertSame(userId, activated.getId()),
+        () -> assertSame(userName, activated.getName()),
+        () -> assertSame(userEmail, activated.getEmail()),
+        () -> assertEquals(UserRole.REVIEWER, activated.getRole()));
   }
 
-  // ── deactivate()
-
   @Test
-  @DisplayName("deactivate() debe retornar nueva instancia con INACTIVE y demás campos intactos")
+  @DisplayName("Debe retornar una nueva instancia con estado INACTIVE al desactivar el usuario")
   void shouldDeactivateAndPreserveOtherFields() {
     // Arrange
     final UserModel active =
@@ -92,11 +83,10 @@ class UserModelTest {
 
     // Assert
     assertAll(
-        "resultado de deactivate()",
-        () -> assertNotSame(active, deactivated, "debe ser una nueva instancia"),
-        () ->
-            assertEquals(UserStatus.INACTIVE, deactivated.getStatus(), "status debe ser INACTIVE"),
-        () -> assertSame(userId, deactivated.getId(), "id debe preservarse"),
-        () -> assertEquals(UserRole.ADMIN, deactivated.getRole(), "role debe preservarse"));
+        "Verificación de desactivación de usuario",
+        () -> assertNotSame(active, deactivated),
+        () -> assertEquals(UserStatus.INACTIVE, deactivated.getStatus()),
+        () -> assertSame(userId, deactivated.getId()),
+        () -> assertEquals(UserRole.ADMIN, deactivated.getRole()));
   }
 }

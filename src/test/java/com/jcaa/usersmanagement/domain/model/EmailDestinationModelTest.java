@@ -8,8 +8,10 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests para EmailDestinationModel.
  *
- * <p>Verifica que el modelo de destino de correo se construya correctamente
- * y que las validaciones de campos obligatorios (no nulos ni vacíos) se apliquen.
+ * <p>
+ * Verifica que el modelo de destino de correo se construya correctamente
+ * y que las validaciones de campos obligatorios (no nulos ni vacíos) se
+ * apliquen.
  */
 @DisplayName("EmailDestinationModel")
 class EmailDestinationModelTest {
@@ -28,10 +30,10 @@ class EmailDestinationModelTest {
     // Assert
     assertAll(
         "Verificación de campos del modelo de destino",
-        () -> assertEquals(EMAIL, model.getDestinationEmail()),
-        () -> assertEquals(NAME, model.getDestinationName()),
-        () -> assertEquals(SUBJECT, model.getSubject()),
-        () -> assertEquals(BODY, model.getBody()));
+        () -> assertEquals(EMAIL, model.destinationEmail()),
+        () -> assertEquals(NAME, model.destinationName()),
+        () -> assertEquals(SUBJECT, model.subject()),
+        () -> assertEquals(BODY, model.body()));
   }
 
   @Test
