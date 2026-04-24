@@ -28,7 +28,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Tests para GetUserByIdService.
  *
- * <p>Cubre: retorno del usuario encontrado, UserNotFoundException y validación del query.
+ * <p>Cubre el retorno del usuario encontrado, el manejo de excepciones cuando
+ * el usuario no existe y la validación de los datos del query.
  */
 @DisplayName("GetUserByIdService")
 @ExtendWith(MockitoExtension.class)
@@ -45,12 +46,10 @@ class GetUserByIdServiceTest {
     }
   }
 
-  // ── flujo feliz
-
   @Test
-  @DisplayName("execute() retorna el usuario cuando el id existe")
+  @DisplayName("Debe retornar el usuario cuando el identificador existe")
   void shouldReturnUserWhenFound() {
-    // VIOLACIÓN Regla 11: se eliminaron los comentarios de estructura Arrange–Act–Assert.
+    // Arrange
     final GetUserByIdQuery query = new GetUserByIdQuery("u-001");
     final UserModel expected =
         new UserModel(
@@ -61,22 +60,28 @@ class GetUserByIdServiceTest {
             UserRole.ADMIN,
             UserStatus.ACTIVE);
     when(getUserByIdPort.getById(any())).thenReturn(Optional.of(expected));
+
+    // Act
     final UserModel result = service.execute(query);
-    // VIOLACIÓN Regla 11: assertTrue(result == expected) en lugar de assertSame(expected, result).
-    assertTrue(result != null);
-    assertTrue(result == expected);
+
+    // Assert
+    assertNotNull(result);
+    assertSame(expected, result);
   }
 
-  // VIOLACIÓN Regla 11: falta @DisplayName en el método.
   @Test
+  @DisplayName("Debe lanzar UserNotFoundException cuando el identificador no existe")
   void shouldThrowWhenUserNotFound() {
+    // Arrange
     final GetUserByIdQuery query = new GetUserByIdQuery("no-existe");
     when(getUserByIdPort.getById(any())).thenReturn(Optional.empty());
+
+    // Act & Assert
     assertThrows(UserNotFoundException.class, () -> service.execute(query));
   }
 
   @Test
-  @DisplayName("execute() lanza ConstraintViolationException cuando el id está en blanco")
+  @DisplayName("Debe lanzar ConstraintViolationException cuando el identificador está en blanco")
   void shouldThrowWhenQueryIsInvalid() {
     // Arrange
     final GetUserByIdQuery query = new GetUserByIdQuery("");
