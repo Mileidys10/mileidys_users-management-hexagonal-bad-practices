@@ -10,34 +10,33 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for ValidatorProvider.
+ * Tests para ValidatorProvider.
  *
- * <p>Covers that {@code buildValidator()} returns a functional {@link Validator}: non-null, able to
- * detect violations on invalid beans, and able to pass valid beans.
+ * <p>Verifica que el proveedor de validación retorne una instancia funcional de {@link Validator},
+ * capaz de detectar violaciones de restricciones Bean Validation en objetos inválidos y permitir el
+ * paso de objetos válidos.
  */
 @DisplayName("ValidatorProvider")
 class ValidatorProviderTest {
 
   /**
-   * Minimal bean with a {@code @NotNull} constraint to exercise the Validator without coupling to
-   * production classes.
+   * Bean mínimo con una restricción {@code @NotNull} para ejercitar el validador sin acoplarse a
+   * clases de producción.
    */
   private record ConstrainedBean(@NotNull String requiredField) {}
 
-  // ── buildValidator()
-
   @Test
-  @DisplayName("buildValidator() returns a non-null Validator instance")
+  @DisplayName("Debe retornar una instancia de validador no nula")
   void shouldReturnNonNullValidator() {
     // Act
     final Validator validator = ValidatorProvider.buildValidator();
 
     // Assert
-    assertNotNull(validator, "Validator must not be null");
+    assertNotNull(validator);
   }
 
   @Test
-  @DisplayName("buildValidator() returns a Validator that detects violations on an invalid bean")
+  @DisplayName("Debe detectar violaciones de restricción en un objeto con campos inválidos")
   void shouldDetectViolationsOnInvalidBean() {
     // Arrange
     final Validator validator = ValidatorProvider.buildValidator();
@@ -47,12 +46,11 @@ class ValidatorProviderTest {
     final Set<ConstraintViolation<ConstrainedBean>> violations = validator.validate(invalidBean);
 
     // Assert
-    assertFalse(
-        violations.isEmpty(), "must detect the @NotNull violation when requiredField is null");
+    assertFalse(violations.isEmpty());
   }
 
   @Test
-  @DisplayName("buildValidator() returns a Validator that finds no violations on a valid bean")
+  @DisplayName("Debe confirmar que no existen violaciones en un objeto con campos válidos")
   void shouldFindNoViolationsOnValidBean() {
     // Arrange
     final Validator validator = ValidatorProvider.buildValidator();
@@ -62,7 +60,6 @@ class ValidatorProviderTest {
     final Set<ConstraintViolation<ConstrainedBean>> violations = validator.validate(validBean);
 
     // Assert
-    assertTrue(
-        violations.isEmpty(), "must find no violations when requiredField has a non-null value");
+    assertTrue(violations.isEmpty());
   }
 }
