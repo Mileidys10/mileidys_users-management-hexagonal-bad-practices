@@ -29,7 +29,9 @@ public class UserModel {
             final UserRole role) {
         return new UserModel(id, name, email, password, role, UserStatus.PENDING);
     }
-
+    public boolean verifyPassword(final String plainPassword) {
+        return password.verifyPlain(plainPassword);
+    }
     public UserModel activate() {
         return new UserModel(id, name, email, password, role, UserStatus.ACTIVE);
     }
