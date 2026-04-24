@@ -3,34 +3,47 @@ package com.jcaa.usersmanagement.domain.valueobject;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.jcaa.usersmanagement.domain.exception.InvalidUserNameException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-// VIOLACIÓN Regla 11: se eliminó @DisplayName de la clase y de todos los métodos.
+/**
+ * Tests para el objeto de valor UserName.
+ *
+ * <p>Verifica la normalización de nombres mediante el recorte de espacios,
+ * la validación de longitud mínima y el manejo de valores nulos o vacíos.
+ */
+@DisplayName("UserName")
 class UserNameTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"John Arrieta", "   John Arrieta   ", "John Arrieta \t"})
+  @DisplayName("Debe crear el nombre de usuario eliminando los espacios en blanco circundantes")
   void shouldValidateUserNameMinimumLength(final String userName) {
-    // VIOLACIÓN Regla 11: se eliminaron comentarios Arrange–Act–Assert.
-    // VIOLACIÓN Regla 11: assertTrue(x.equals(y)) en lugar de assertEquals(x, y).
-    final String correctUserName = "John Arrieta";
+    // Arrange
+    final String expectedUserName = "John Arrieta";
+
+    // Act
     final UserName userNameVo = new UserName(userName);
-    assertTrue(correctUserName.equals(userNameVo.toString()));
+
+    // Assert
+    assertEquals(expectedUserName, userNameVo.toString());
   }
 
-  // -- Flujo con excepciones y ramas de validación ---
-
   @Test
+  @DisplayName("Debe lanzar NullPointerException cuando el nombre de usuario es nulo")
   void shouldValidateUserNameIsNotNull() {
+    // Act & Assert
     assertThrows(NullPointerException.class, () -> new UserName(null));
   }
 
   @ParameterizedTest
   @ValueSource(
       strings = {"", "  ", "\t", "\n", "\r", "\f", "\b", "Jo", "Ty  ", "", "   Cy ", "Ed\t"})
+  @DisplayName("Debe lanzar InvalidUserNameException cuando el nombre es corto, vacío o solo espacios")
   void shouldValidateUserNameIsNotEmptyAndMinimumLength(final String userName) {
+    // Act & Assert
     assertThrows(InvalidUserNameException.class, () -> new UserName(userName));
   }
 }
