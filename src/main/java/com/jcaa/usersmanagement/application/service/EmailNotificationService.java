@@ -82,11 +82,15 @@ private static final String FAILED_SEND_EMAIL_MSG = "Failed to send email notifi
         return result;
     }
 
+    InputStream openResourceStream(final String path) {
+        return getClass().getResourceAsStream(path);
+    }
+
     private String loadTemplate(final String templateName) {
         final String path = "/templates/" + templateName;
-        try (InputStream inputStream = getClass().getResourceAsStream(path)) {
+        try (InputStream inputStream = openResourceStream(path)) {
             if (Objects.isNull(inputStream)) {
-                throw new IllegalStateException("Template not found: " + path);
+                throw EmailSenderException.becauseSendFailed(new RuntimeException("Template not found: " + path));
             }
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (final IOException e) {

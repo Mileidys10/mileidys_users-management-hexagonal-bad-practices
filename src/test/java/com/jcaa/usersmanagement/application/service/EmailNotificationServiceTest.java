@@ -28,19 +28,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Tests para EmailNotificationService.
  *
- * <p>
- * Cubre el envío de notificaciones por creación y actualización de usuario,
- * así como el manejo de errores al cargar templates y fallos en el puerto de
- * salida.
+ * <p>Verifica el envío de notificaciones por creación y actualización de usuario, el procesamiento
+ * correcto de plantillas HTML y la gestión de errores tanto en la carga de recursos como en el
+ * puerto de salida SMTP.
  */
 @DisplayName("EmailNotificationService")
 @ExtendWith(MockitoExtension.class)
 class EmailNotificationServiceTest {
 
-  @Mock
-  private EmailSenderPort emailSenderPort;
-  @Mock
-  private EmailSenderPort spyEmailSenderPort;
+  @Mock private EmailSenderPort emailSenderPort;
+
+  @Mock private EmailSenderPort spyEmailSenderPort;
 
   private EmailNotificationService service;
   private EmailNotificationService serviceSpy;
@@ -48,7 +46,8 @@ class EmailNotificationServiceTest {
   private static final String EMAIL = "john@example.com";
   private static final String NAME = "John Arrieta";
   private static final String PASSWORD = "SecurePass1";
-  private static final String TEMPLATE_CONTENT = "<html>{{name}} {{email}} {{password}} {{role}} {{status}}</html>";
+  private static final String TEMPLATE_CONTENT =
+      "<html>{{name}} {{email}} {{password}} {{role}} {{status}}</html>";
 
   private UserModel user;
 
@@ -57,13 +56,14 @@ class EmailNotificationServiceTest {
     service = new EmailNotificationService(emailSenderPort);
     serviceSpy = spy(new EmailNotificationService(spyEmailSenderPort));
 
-    user = new UserModel(
-        new UserId("u-001"),
-        new UserName(NAME),
-        new UserEmail(EMAIL),
-        UserPassword.fromPlainText(PASSWORD),
-        UserRole.ADMIN,
-        UserStatus.ACTIVE);
+    user =
+        new UserModel(
+            new UserId("u-001"),
+            new UserName(NAME),
+            new UserEmail(EMAIL),
+            UserPassword.fromPlainText(PASSWORD),
+            UserRole.ADMIN,
+            UserStatus.ACTIVE);
   }
 
   @Test
@@ -76,8 +76,8 @@ class EmailNotificationServiceTest {
     verify(emailSenderPort)
         .send(
             argThat(
-                dest -> EMAIL.equals(dest.destinationEmail())
-                    && dest.subject().contains("creada")));
+                dest ->
+                    EMAIL.equals(dest.destinationEmail()) && dest.subject().contains("creada")));
   }
 
   @Test
@@ -90,15 +90,17 @@ class EmailNotificationServiceTest {
     verify(emailSenderPort)
         .send(
             argThat(
-                dest -> EMAIL.equals(dest.destinationEmail())
-                    && dest.subject().contains("actualizada")));
+                dest ->
+                    EMAIL.equals(dest.destinationEmail())
+                        && dest.subject().contains("actualizada")));
   }
 
   @Test
   @DisplayName("Debe re-lanzar EmailSenderException cuando el puerto falla al notificar creación")
   void shouldRethrowEmailSenderExceptionOnCreate() {
     // Arrange
-    final EmailSenderException cause = EmailSenderException.becauseSmtpFailed(EMAIL, "Connection refused");
+    final EmailSenderException cause =
+        EmailSenderException.becauseSmtpFailed(EMAIL, "Connection refused");
     doThrow(cause).when(emailSenderPort).send(any());
 
     // Act & Assert
@@ -106,10 +108,12 @@ class EmailNotificationServiceTest {
   }
 
   @Test
-  @DisplayName("Debe re-lanzar EmailSenderException cuando el puerto falla al notificar actualización")
+  @DisplayName(
+      "Debe re-lanzar EmailSenderException cuando el puerto falla al notificar actualización")
   void shouldRethrowEmailSenderExceptionOnUpdate() {
     // Arrange
-    final EmailSenderException cause = EmailSenderException.becauseSmtpFailed(EMAIL, "Connection refused");
+    final EmailSenderException cause =
+        EmailSenderException.becauseSmtpFailed(EMAIL, "Connection refused");
     doThrow(cause).when(emailSenderPort).send(any());
 
     // Act & Assert
@@ -142,7 +146,8 @@ class EmailNotificationServiceTest {
   @DisplayName("Debe sustituir todos los tokens del template correctamente")
   void shouldRenderAllTokensInTemplate() {
     // Arrange
-    final InputStream templateStream = new ByteArrayInputStream(TEMPLATE_CONTENT.getBytes(StandardCharsets.UTF_8));
+    final InputStream templateStream =
+        new ByteArrayInputStream(TEMPLATE_CONTENT.getBytes(StandardCharsets.UTF_8));
     doReturn(templateStream).when(serviceSpy).openResourceStream(any());
 
     // Act
