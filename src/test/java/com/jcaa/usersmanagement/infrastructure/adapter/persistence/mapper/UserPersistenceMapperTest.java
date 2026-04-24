@@ -23,7 +23,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-// VIOLACIÓN Regla 11: se eliminó el javadoc de la clase que documentaba qué casos cubre.
+/**
+ * Tests para UserPersistenceMapper.
+ *
+ * <p>Cubre el mapeo entre modelos de dominio, DTOs de persistencia y entidades,
+ * así como la extracción de datos desde ResultSet de JDBC.
+ */
 @DisplayName("UserPersistenceMapper")
 @ExtendWith(MockitoExtension.class)
 class UserPersistenceMapperTest {
@@ -39,14 +44,11 @@ class UserPersistenceMapperTest {
 
   @Mock private ResultSet resultSet;
 
-  // VIOLACIÓN Regla 4 (consecuencia): el mapper ya no es @UtilityClass, hay que instanciarlo.
-  private UserPersistenceMapper mapper;
   private UserModel userModel;
   private UserEntity userEntity;
 
   @BeforeEach
   void setUp() {
-    mapper = new UserPersistenceMapper();
     userModel =
         new UserModel(
             new UserId(ID),
@@ -59,49 +61,43 @@ class UserPersistenceMapperTest {
     userEntity = new UserEntity(ID, NAME, EMAIL, HASH, ROLE, STATUS, CREATED_AT, UPDATED_AT);
   }
 
-  // ── fromModelToDto()
-
   @Test
-  @DisplayName("fromModelToDto() maps all UserModel fields and sets null timestamps")
+  @DisplayName("Debe mapear todos los campos del modelo de dominio al DTO de persistencia")
   void shouldMapModelToDto() {
     // Act
-    final UserPersistenceDto result = mapper.fromModelToDto(userModel);
+    final UserPersistenceDto result = UserPersistenceMapper.fromModelToDto(userModel);
 
     // Assert
     assertAll(
-        "fromModelToDto()",
-        () -> assertEquals(ID, result.id(), "id"),
-        () -> assertEquals(NAME, result.name(), "name"),
-        () -> assertEquals(EMAIL, result.email(), "email"),
-        () -> assertEquals(HASH, result.password(), "password"),
-        () -> assertEquals(ROLE, result.role(), "role"),
-        () -> assertEquals(STATUS, result.status(), "status"),
-        () -> assertNull(result.createdAt(), "createdAt must be null"),
-        () -> assertNull(result.updatedAt(), "updatedAt must be null"));
+        "Verificación de mapeo a DTO",
+        () -> assertEquals(ID, result.id()),
+        () -> assertEquals(NAME, result.name()),
+        () -> assertEquals(EMAIL, result.email()),
+        () -> assertEquals(HASH, result.password()),
+        () -> assertEquals(ROLE, result.role()),
+        () -> assertEquals(STATUS, result.status()),
+        () -> assertNull(result.createdAt()),
+        () -> assertNull(result.updatedAt()));
   }
 
-  // ── fromEntityToModel()
-
   @Test
-  @DisplayName("fromEntityToModel() maps all UserEntity fields to a domain UserModel")
+  @DisplayName("Debe mapear todos los campos de la entidad al modelo de dominio")
   void shouldMapEntityToModel() {
     // Act
-    final UserModel result = mapper.fromEntityToModel(userEntity);
+    final UserModel result = UserPersistenceMapper.fromEntityToModel(userEntity);
 
     // Assert
     assertAll(
-        "fromEntityToModel()",
-        () -> assertEquals(ID, result.getId().value(), "id"),
-        () -> assertEquals(NAME, result.getName().value(), "name"),
-        () -> assertEquals(EMAIL, result.getEmail().value(), "email"),
-        () -> assertEquals(UserRole.ADMIN, result.getRole(), "role"),
-        () -> assertEquals(UserStatus.ACTIVE, result.getStatus(), "status"));
+        "Verificación de mapeo a modelo",
+        () -> assertEquals(ID, result.getId().value()),
+        () -> assertEquals(NAME, result.getName().value()),
+        () -> assertEquals(EMAIL, result.getEmail().value()),
+        () -> assertEquals(UserRole.ADMIN, result.getRole()),
+        () -> assertEquals(UserStatus.ACTIVE, result.getStatus()));
   }
 
-  // ── fromResultSetToEntity() — happy path
-
   @Test
-  @DisplayName("fromResultSetToEntity() reads all eight columns from the ResultSet")
+  @DisplayName("Debe leer todas las columnas del ResultSet y mapearlas a una entidad")
   void shouldReadAllColumnsFromResultSet() throws SQLException {
     // Arrange
     when(resultSet.getString("id")).thenReturn(ID);
@@ -114,55 +110,48 @@ class UserPersistenceMapperTest {
     when(resultSet.getString("updated_at")).thenReturn(UPDATED_AT);
 
     // Act
-    final UserEntity result = mapper.fromResultSetToEntity(resultSet);
+    final UserEntity result = UserPersistenceMapper.fromResultSetToEntity(resultSet);
 
     // Assert
     assertAll(
-        "fromResultSetToEntity()",
-        () -> assertEquals(ID, result.id(), "id"),
-        () -> assertEquals(NAME, result.name(), "name"),
-        () -> assertEquals(EMAIL, result.email(), "email"),
-        () -> assertEquals(HASH, result.password(), "password"),
-        () -> assertEquals(ROLE, result.role(), "role"),
-        () -> assertEquals(STATUS, result.status(), "status"),
-        () -> assertEquals(CREATED_AT, result.createdAt(), "createdAt"),
-        () -> assertEquals(UPDATED_AT, result.updatedAt(), "updatedAt"));
+        "Verificación de mapeo desde ResultSet",
+        () -> assertEquals(ID, result.id()),
+        () -> assertEquals(NAME, result.name()),
+        () -> assertEquals(EMAIL, result.email()),
+        () -> assertEquals(HASH, result.password()),
+        () -> assertEquals(ROLE, result.role()),
+        () -> assertEquals(STATUS, result.status()),
+        () -> assertEquals(CREATED_AT, result.createdAt()),
+        () -> assertEquals(UPDATED_AT, result.updatedAt()));
   }
 
-  // ── fromResultSetToEntity() — SQLException propagation
-
   @Test
-  @DisplayName("fromResultSetToEntity() propagates SQLException when ResultSet read fails")
+  @DisplayName("Debe propagar SQLException cuando falla la lectura del ResultSet")
   void shouldPropagateExceptionFromResultSet() throws SQLException {
     // Arrange
     when(resultSet.getString(anyString())).thenThrow(new SQLException("Column read failed"));
 
-    // Act + Assert
+    // Act & Assert
     assertThrows(
         SQLException.class,
-        () -> mapper.fromResultSetToEntity(resultSet),
-        "must propagate SQLException when ResultSet throws on getString");
+        () -> UserPersistenceMapper.fromResultSetToEntity(resultSet));
   }
 
-  // ── fromResultSetToModelList() — empty
-
   @Test
-  @DisplayName("fromResultSetToModelList() returns an empty list when ResultSet has no rows")
+  @DisplayName("Debe retornar una lista vacía cuando el ResultSet no tiene filas")
   void shouldReturnEmptyListWhenResultSetIsEmpty() throws SQLException {
     // Arrange
     when(resultSet.next()).thenReturn(false);
 
     // Act
-    final List<UserModel> result = mapper.fromResultSetToModelList(resultSet);
+    final List<UserModel> result = UserPersistenceMapper.fromResultSetToModelList(resultSet);
 
     // Assert
-    assertTrue(result.isEmpty(), "must return an empty list when ResultSet has no rows");
+    assertTrue(result.isEmpty());
   }
 
-  // ── fromResultSetToModelList() — multiple rows
-
   @Test
-  @DisplayName("fromResultSetToModelList() returns one model per row in the ResultSet")
+  @DisplayName("Debe retornar un modelo de dominio por cada fila presente en el ResultSet")
   void shouldReturnOneModelPerRow() throws SQLException {
     // Arrange
     when(resultSet.next()).thenReturn(true, true, false);
@@ -176,25 +165,22 @@ class UserPersistenceMapperTest {
     when(resultSet.getString("updated_at")).thenReturn(UPDATED_AT, UPDATED_AT);
 
     // Act
-    final List<UserModel> result = mapper.fromResultSetToModelList(resultSet);
+    final List<UserModel> result = UserPersistenceMapper.fromResultSetToModelList(resultSet);
 
     // Assert
-    assertEquals(2, result.size(), "must return one model per row in the ResultSet");
+    assertEquals(2, result.size());
   }
 
-  // ── fromResultSetToModelList() — SQLException propagation during iteration
-
   @Test
-  @DisplayName("fromResultSetToModelList() propagates SQLException when a row read fails")
+  @DisplayName("Debe propagar SQLException cuando falla la lectura de una fila durante la iteración")
   void shouldPropagateExceptionDuringIteration() throws SQLException {
     // Arrange
     when(resultSet.next()).thenReturn(true);
     when(resultSet.getString(anyString())).thenThrow(new SQLException("Row read failed"));
 
-    // Act + Assert
+    // Act & Assert
     assertThrows(
         SQLException.class,
-        () -> mapper.fromResultSetToModelList(resultSet),
-        "must propagate SQLException when a row fails to be read");
+        () -> UserPersistenceMapper.fromResultSetToModelList(resultSet));
   }
 }
