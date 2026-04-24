@@ -9,23 +9,30 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-// VIOLACIÓN Regla 11: se eliminó @DisplayName de la clase.
+/**
+ * Tests para el objeto de valor UserPassword.
+ *
+ * <p>Verifica el cifrado de contraseñas en texto plano, la validación de longitud,
+ * la creación desde hashes existentes y la correcta implementación de igualdad y hashcode.
+ */
+@DisplayName("UserPassword")
 class UserPasswordTest {
 
-  // VIOLACIÓN Regla 11: falta @DisplayName en el test parametrizado.
   @ParameterizedTest
   @ValueSource(strings = {"password123", "   password123   "})
+  @DisplayName("Debe normalizar y cifrar la contraseña cuando se proporciona en texto plano")
   void shouldNormalizeAndHashPassword(final String input) {
-    // VIOLACIÓN Regla 11: se eliminaron los comentarios Arrange–Act–Assert.
+    // Act
     final UserPassword result = UserPassword.fromPlainText(input);
-    // VIOLACIÓN Regla 11: assertTrue(result.value() != null) en lugar de assertNotNull.
-    assertTrue(result.value() != null);
+
+    // Assert
+    assertNotNull(result.value());
     assertNotEquals(input.trim(), result.value());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"clave", "    clave     "})
-  @DisplayName("Valida que el password no tenga menos de 8 caracteres después normalizarlo")
+  @DisplayName("Debe lanzar excepción cuando la contraseña normalizada es demasiado corta")
   void shouldFailWhenPasswordIsTooShort(final String password) {
     // Act & Assert
     assertThrows(InvalidUserPasswordException.class, () -> UserPassword.fromPlainText(password));
@@ -33,86 +40,94 @@ class UserPasswordTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"", "  ", "\r", "\t", "\n", "\f", "\b", "\0"})
-  @DisplayName("Valida que el password no sea vacio o solo espacios en blanco")
+  @DisplayName("Debe lanzar excepción cuando la contraseña está vacía o compuesta solo por espacios")
   void shouldThrowWhenPasswordIsEmptyOrBlank(final String password) {
     // Act & Assert
     assertThrows(InvalidUserPasswordException.class, () -> UserPassword.fromPlainText(password));
   }
 
   @Test
-  @DisplayName("Valida que el password no sea null")
+  @DisplayName("Debe lanzar NullPointerException cuando la contraseña proporcionada es nula")
   void shouldThrowWhenPasswordIsNull() {
     // Act & Assert
     assertThrows(NullPointerException.class, () -> UserPassword.fromPlainText(null));
   }
 
   @Test
-  @DisplayName("Valida que el hash del password pueda ser verificado con el texto plano original")
+  @DisplayName("Debe verificar correctamente la contraseña cifrada contra su original en texto plano")
   void shouldVerifyPlainPassword() {
     // Arrange
     final String plainPassword = "mySecurePassword";
+
     // Act
     final UserPassword userPassword = UserPassword.fromPlainText(plainPassword);
+
     // Assert
     assertTrue(userPassword.verifyPlain(plainPassword));
   }
 
   @Test
-  @DisplayName("Debería crear un UserPassword desde un hash y ser igual al original")
+  @DisplayName("Debe permitir la reconstrucción del objeto desde un hash persistido y validar contra el original")
   void shouldCreateUserPasswordFromExistingHash() {
     // Arrange
     final String rawPassword = "Abcde1234567";
     final UserPassword originalUserPassword = UserPassword.fromPlainText(rawPassword);
     final String generatedHash = originalUserPassword.value();
+
     // Act
     final UserPassword fromHashUserPassword = UserPassword.fromHash(generatedHash);
-    assertEquals(
-        originalUserPassword,
-        fromHashUserPassword,
-        "Los objetos UserPassword deberían ser iguales al usar el mismo hash");
-    assertTrue(
-        fromHashUserPassword.verifyPlain(rawPassword),
-        "El objeto creado desde el hash debería poder verificar el password en texto plano");
+
+    // Assert
+    assertEquals(originalUserPassword, fromHashUserPassword);
+    assertTrue(fromHashUserPassword.verifyPlain(rawPassword));
   }
 
   @Test
-  @DisplayName("equals: retorna false cuando el argumento no es instancia de UserPassword")
+  @DisplayName("Debe retornar falso al comparar con un objeto que no es una instancia de contraseña")
   void shouldReturnFalseWhenOtherIsNotInstanceOfUserPassword() {
-    // Arrange & Act
+    // Arrange
     final UserPassword password = UserPassword.fromPlainText("MiPassword123");
     final Object nonUserPassword = mock(Object.class);
+
+    // Act
+    final boolean areEqual = password.equals(nonUserPassword);
+
     // Assert
-    assertNotEquals(password, nonUserPassword);
+    assertFalse(areEqual);
   }
 
   @Test
-  @DisplayName("equals: hash distinto retorna false")
+  @DisplayName("Debe retornar falso al comparar contraseñas con hashes distintos")
   void shouldReturnFalseWhenDifferentHash() {
-    // Arrange & Act
+    // Arrange
     final UserPassword a = UserPassword.fromPlainText("MiPassword123");
     final UserPassword b = UserPassword.fromPlainText("OtroPassword456");
+
     // Assert
     assertNotEquals(a, b);
   }
 
   @Test
-  @DisplayName("hashCode: consistente para la misma instancia")
+  @DisplayName("Debe producir un hashCode consistente para la misma instancia")
   void shouldReturnConsistentHashCode() {
-    // Arrange & Act
-    UserPassword password = UserPassword.fromPlainText("MiPassword123");
-    //  Act
+    // Arrange
+    final UserPassword password = UserPassword.fromPlainText("MiPassword123");
+
+    // Act
     final int firstHashCode = password.hashCode();
     final int secondHashCode = password.hashCode();
+
     // Assert
     assertEquals(firstHashCode, secondHashCode);
   }
 
   @Test
-  @DisplayName("hashCode: objetos iguales tienen el mismo hashCode — contrato equals/hashCode")
+  @DisplayName("Debe producir el mismo hashCode para objetos que son considerados iguales")
   void shouldHaveSameHashCodeWhenEqual() {
-    // Arrange & Act
+    // Arrange
     final UserPassword a = UserPassword.fromPlainText("MiPassword123");
-    final UserPassword b = UserPassword.fromHash(a.value()); // mismo hash => equals true
+    final UserPassword b = UserPassword.fromHash(a.value());
+
     // Assert
     assertEquals(a, b);
     assertEquals(a.hashCode(), b.hashCode());
