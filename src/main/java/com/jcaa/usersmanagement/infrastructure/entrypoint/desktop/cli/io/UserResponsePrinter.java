@@ -28,11 +28,11 @@ public final class UserResponsePrinter {
 
     public void print(final UserResponse response) {
         console.println(SEPARATOR);
-        console.printf(ROW_FORMAT, "ID",     response.getId());
-        console.printf(ROW_FORMAT, "Name",   response.getName());
-        console.printf(ROW_FORMAT, "Email",  response.getEmail());
-        console.printf(ROW_FORMAT, "Role",   response.getRole());
-        console.printf(ROW_FORMAT, "Status", getStatusLabel(response.getStatus()));
+        console.printf(ROW_FORMAT, "ID",     response.id());
+        console.printf(ROW_FORMAT, "Name",   response.name());
+        console.printf(ROW_FORMAT, "Email",  response.email());
+        console.printf(ROW_FORMAT, "Role",   response.role());
+        console.printf(ROW_FORMAT, "Status", getStatusLabel(response.status()));
         console.println(SEPARATOR);
     }
 
@@ -53,7 +53,7 @@ public final class UserResponsePrinter {
         }
 
         for (UserResponse user : users) {
-            console.printf("  %s (%s)%n", user.getName(), getStatusLabel(user.getStatus()));
+            console.printf("  %s (%s)%n", user.name(), getStatusLabel(user.status()));
         }
     }
 
