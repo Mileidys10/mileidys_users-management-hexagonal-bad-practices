@@ -8,24 +8,31 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+/**
+ * Tests para el objeto de valor UserEmail.
+ *
+ * <p>Verifica la normalización, validación de formato y consistencia de representación
+ * de los correos electrónicos de usuario.
+ */
+@DisplayName("UserEmail")
 class UserEmailTest {
 
   @Test
-  @DisplayName("Normaliza email con trim y lowercase")
+  @DisplayName("Debe normalizar el correo eliminando espacios y convirtiendo a minúsculas")
   void shouldNormalizeEmail() {
     // Arrange
-    final String correctEmail = "john.arrieta@gmail.com";
-    final String email = "  john.arrieta@gmail.com  ";
+    final String expectedEmail = "john.arrieta@gmail.com";
+    final String inputEmail = "  john.arrieta@gmail.com  ";
 
     // Act
-    final UserEmail userEmail = new UserEmail(email);
+    final UserEmail userEmail = new UserEmail(inputEmail);
 
     // Assert
-    assertEquals(correctEmail, userEmail.value());
+    assertEquals(expectedEmail, userEmail.value());
   }
 
   @Test
-  @DisplayName("Valida que el email no este vacio")
+  @DisplayName("Debe lanzar excepción cuando el correo está compuesto solo por espacios")
   void shouldValidateEmailIsNotEmpty() {
     // Arrange
     final String email = "   ";
@@ -35,31 +42,34 @@ class UserEmailTest {
   }
 
   @Test
-  @DisplayName("Valida que el email tenga un formato correcto")
+  @DisplayName("Debe lanzar excepción cuando el formato del correo es inválido")
   void shouldValidateEmailFormat() {
     // Arrange
     final String email = "johnarroeta-arroba-gmail.com";
-    // Act y Assert
+
+    // Act & Assert
     assertThrows(InvalidUserEmailException.class, () -> new UserEmail(email));
   }
 
   @Test
-  @DisplayName("Valida que el email creado sea igual al generado en formato string")
+  @DisplayName("Debe retornar el valor del correo al solicitar su representación en String")
   void shouldValidateEmailToString() {
     // Arrange
     final String email = "john.arrieta@gmail.com";
-    // Act & Assert
-    assertEquals(email, new UserEmail(email).toString());
+
+    // Act
+    final UserEmail userEmail = new UserEmail(email);
+
+    // Assert
+    assertEquals(email, userEmail.toString());
   }
 
   @Test
-  @DisplayName("Valida que el email no sea nulo")
+  @DisplayName("Debe lanzar NullPointerException cuando el correo proporcionado es nulo")
   void shouldValidateEmailIsNotNull() {
     // Act & Assert
     assertThrows(NullPointerException.class, () -> new UserEmail(null));
   }
-
-  // ------ Test con parameters --------
 
   @ParameterizedTest
   @ValueSource(
@@ -68,7 +78,7 @@ class UserEmailTest {
         "john-arrieta_arreita@gmail.com.co",
         "john1234567arreita@gmail.com"
       })
-  @DisplayName("Valida que el email tenga un formato correcto con diferentes casos")
+  @DisplayName("Debe permitir la creación de correos con formatos válidos diversos")
   void shouldValidateEmailFormatWithParameters(String email) {
     // Act & Assert
     assertDoesNotThrow(() -> new UserEmail(email));
@@ -83,7 +93,7 @@ class UserEmailTest {
         "john.arrieta@.com",
         "john arrieta@com"
       })
-  @DisplayName("Valida que el email tenga un formato incorrecto con diferentes casos")
+  @DisplayName("Debe prohibir la creación de correos con formatos inválidos")
   void shouldValidateEmailFormatWithInvalidParameters(String email) {
     // Act & Assert
     assertThrows(InvalidUserEmailException.class, () -> new UserEmail(email));
