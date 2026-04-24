@@ -16,7 +16,12 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-// VIOLACIÓN Regla 11: se eliminó el javadoc de la clase.
+/**
+ * Tests para DatabaseConnectionFactory.
+ *
+ * <p>Verifica la creación de conexiones JDBC mediante DriverManager y el correcto
+ * mapeo de excepciones SQLException a excepciones de infraestructura (PersistenceException).
+ */
 @DisplayName("DatabaseConnectionFactory")
 @ExtendWith(MockitoExtension.class)
 class DatabaseConnectionFactoryTest {
@@ -30,7 +35,6 @@ class DatabaseConnectionFactoryTest {
   @Mock private Connection mockConnection;
 
   private DatabaseConfig config;
-  // VIOLACIÓN Regla 4 (consecuencia): el factory ya no es @UtilityClass, hay que instanciarlo.
   private DatabaseConnectionFactory factory;
 
   @BeforeEach
@@ -39,10 +43,8 @@ class DatabaseConnectionFactoryTest {
     factory = new DatabaseConnectionFactory();
   }
 
-  // ── createConnection() — happy path
-
   @Test
-  @DisplayName("createConnection() returns the connection provided by DriverManager")
+  @DisplayName("Debe retornar la conexión proporcionada por DriverManager cuando los datos son válidos")
   void shouldReturnConnectionWhenDriverManagerSucceeds() {
     // Arrange
     try (final MockedStatic<DriverManager> mockedDriverManager = mockStatic(DriverManager.class)) {
@@ -54,28 +56,23 @@ class DatabaseConnectionFactoryTest {
       final Connection result = factory.createConnection(config);
 
       // Assert
-      assertSame(mockConnection, result, "must return the connection provided by DriverManager");
+      assertSame(mockConnection, result);
     }
   }
 
-  // ── createConnection() — SQLException → PersistenceException
-
   @Test
-  @DisplayName("createConnection() throws PersistenceException when DriverManager fails")
+  @DisplayName("Debe lanzar PersistenceException cuando DriverManager falla al establecer la conexión")
   void shouldThrowPersistenceExceptionWhenDriverManagerFails() {
-    // Arrange — create the exception BEFORE the static mock to avoid
-    // DriverManager.getLogWriter() being intercepted during construction
+    // Arrange
     final SQLException cause = new SQLException("Connection refused");
+
     try (final MockedStatic<DriverManager> mockedDriverManager = mockStatic(DriverManager.class)) {
       mockedDriverManager
           .when(() -> DriverManager.getConnection(any(), any(), any()))
           .thenThrow(cause);
 
-      // Act + Assert
-      assertThrows(
-          PersistenceException.class,
-          () -> factory.createConnection(config),
-          "must throw PersistenceException when DriverManager throws SQLException");
+      // Act & Assert
+      assertThrows(PersistenceException.class, () -> factory.createConnection(config));
     }
   }
 }
