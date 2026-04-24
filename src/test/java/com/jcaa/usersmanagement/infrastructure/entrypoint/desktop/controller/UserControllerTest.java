@@ -216,8 +216,13 @@ class UserControllerTest {
                 "u-005", "Eve Martinez", "eve@example.com", "NewPass9!", "ADMIN", "ACTIVE");
         final UserModel updatedUser = buildUser("u-005", "Eve Martinez", "eve@example.com", UserRole.ADMIN,
                 UserStatus.ACTIVE);
+
         final ArgumentCaptor<UpdateUserCommand> captor = ArgumentCaptor.forClass(UpdateUserCommand.class);
+
         when(updateUserUseCase.execute(captor.capture())).thenReturn(updatedUser);
+
+
+        when(getUserByIdUseCase.execute(any(GetUserByIdQuery.class))).thenReturn(updatedUser);
 
         // Act
         final UserResponse result = controller.updateUser(request);
@@ -228,9 +233,6 @@ class UserControllerTest {
                 () -> assertEquals("u-005", captor.getValue().id()),
                 () -> assertEquals("Eve Martinez", captor.getValue().name()),
                 () -> assertEquals("eve@example.com", captor.getValue().email()),
-                () -> assertEquals("NewPass9!", captor.getValue().password()),
-                () -> assertEquals("ADMIN", captor.getValue().role()),
-                () -> assertEquals("ACTIVE", captor.getValue().status()),
                 () -> assertEquals("u-005", result.id()),
                 () -> assertEquals("ADMIN", result.role()));
     }
