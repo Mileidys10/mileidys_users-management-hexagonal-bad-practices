@@ -18,11 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 /**
- * Tests for JavaMailEmailSenderAdapter.
+ * Tests para JavaMailEmailSenderAdapter.
  *
- * <p>Covers: successful message dispatch (happy path) and EmailSenderException wrapping when
- * Transport.send() raises MessagingException (exceptional branch). Transport.send() is a static
- * method — mocked with MockedStatic to prevent any real SMTP connection.
+ * <p>Cubre el envío exitoso de correos mediante SMTP, el manejo de excepciones de mensajería
+ * (MessagingException) y la correcta configuración de las credenciales de autenticación.
  */
 @DisplayName("JavaMailEmailSenderAdapter")
 class JavaMailEmailSenderAdapterTest {
@@ -49,14 +48,11 @@ class JavaMailEmailSenderAdapterTest {
     destination = new EmailDestinationModel(DEST_EMAIL, DEST_NAME, SUBJECT, BODY);
   }
 
-  // ── send() — happy path
-
   @Test
-  @DisplayName("send() calls Transport.send() exactly once when SMTP succeeds")
+  @DisplayName("Debe invocar el envío de transporte exactamente una vez cuando el SMTP es exitoso")
   void shouldDispatchMessageWhenSmtpSucceeds() {
     // Arrange
     try (final MockedStatic<Transport> mockedTransport = mockStatic(Transport.class)) {
-      // Transport.send(Message) is void — default mock behaviour is a no-op
 
       // Act
       adapter.send(destination);
@@ -66,47 +62,39 @@ class JavaMailEmailSenderAdapterTest {
     }
   }
 
-  // ── send() — MessagingException → EmailSenderException
-
   @Test
-  @DisplayName("send() wraps MessagingException into EmailSenderException with destination email")
+  @DisplayName("Debe encapsular MessagingException en EmailSenderException cuando falla el transporte")
   void shouldThrowEmailSenderExceptionWhenTransportFails() {
-    // Declare the cause before the static mock to avoid intercepting
-    // any static calls MessagingException's constructor may trigger
+    // Arrange
     final MessagingException smtpError = new MessagingException("Connection refused");
 
-    // Arrange
     try (final MockedStatic<Transport> mockedTransport = mockStatic(Transport.class)) {
       mockedTransport.when(() -> Transport.send(any(Message.class))).thenThrow(smtpError);
 
       // Act & Assert
       final EmailSenderException exception =
           assertThrows(EmailSenderException.class, () -> adapter.send(destination));
-      assertTrue(
-          exception.getMessage().contains(DEST_EMAIL),
-          "exception message must identify the recipient email");
+
+      assertTrue(exception.getMessage().contains(DEST_EMAIL));
     }
   }
 
-  // ── Authenticator — getPasswordAuthentication() credentials branch
-
   @Test
-  @SuppressWarnings("java:S3011") // reflection required to access private mailSession in test scope
-  @DisplayName("Authenticator returns PasswordAuthentication with credentials from SmtpConfig")
+  @SuppressWarnings("java:S3011") // Reflexión necesaria para acceder a mailSession privado en el test
+  @DisplayName("Debe proporcionar las credenciales configuradas cuando se invoca el autenticador")
   void shouldProvideConfiguredCredentialsWhenAuthenticatorIsInvoked() throws Exception {
-    // Arrange — retrieve the private mailSession field to reach the stored Authenticator
+    // Arrange
     final Field sessionField = JavaMailEmailSenderAdapter.class.getDeclaredField("mailSession");
     sessionField.setAccessible(true);
     final Session mailSession = (Session) sessionField.get(adapter);
 
-    // Act — Session.requestPasswordAuthentication() internally invokes the stored
-    // Authenticator's getPasswordAuthentication(), covering that branch
+    // Act
     final PasswordAuthentication auth =
         mailSession.requestPasswordAuthentication(null, PORT, "smtp", "Login", USERNAME);
 
     // Assert
     assertAll(
-        "credentials must match SmtpConfig",
+        "Verificación de credenciales SMTP",
         () -> assertEquals(USERNAME, auth.getUserName()),
         () -> assertEquals(PASSWORD, auth.getPassword()));
   }
