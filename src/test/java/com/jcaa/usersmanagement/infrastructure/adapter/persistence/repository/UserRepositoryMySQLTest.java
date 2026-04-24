@@ -27,12 +27,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Tests for UserRepositoryMySQL.
+ * Tests para UserRepositoryMySQL.
  *
- * <p>Covers all public methods with their branches: save() — happy path, INSERT failure, user not
- * found after insert (orElseThrow); update() — happy path, UPDATE failure; getById() — found, not
- * found, SQLException; getByEmail() — found, not found, SQLException; getAll() — happy path,
- * SQLException; delete() — happy path, SQLException.
+ * <p>Verifica las operaciones CRUD en la base de datos MySQL, incluyendo el manejo de
+ * inserciones, actualizaciones, consultas por ID/email, eliminaciones y la gestión
+ * de excepciones SQL transformadas a PersistenceException.
  */
 @DisplayName("UserRepositoryMySQL")
 @ExtendWith(MockitoExtension.class)
@@ -71,13 +70,11 @@ class UserRepositoryMySQLTest {
             UserStatus.ACTIVE);
   }
 
-  // Helper: wire connection → statement → resultSet
   private void configureStatementAndResultSet() throws SQLException {
     when(connection.prepareStatement(anyString())).thenReturn(statement);
     when(statement.executeQuery()).thenReturn(resultSet);
   }
 
-  // Helper: configure resultSet to return one full user row
   private void configureResultSetRow() throws SQLException {
     when(resultSet.getString("id")).thenReturn(ID);
     when(resultSet.getString("name")).thenReturn(NAME);
@@ -89,10 +86,8 @@ class UserRepositoryMySQLTest {
     when(resultSet.getString("updated_at")).thenReturn(UPDATED_AT);
   }
 
-  // ── save() — happy path
-
   @Test
-  @DisplayName("save() executes INSERT and returns the persisted user fetched by id")
+  @DisplayName("Debe ejecutar el INSERT y retornar el usuario persistido consultado por ID")
   void shouldSaveUserAndReturnById() throws SQLException {
     // Arrange
     configureStatementAndResultSet();
@@ -104,48 +99,36 @@ class UserRepositoryMySQLTest {
 
     // Assert
     assertAll(
-        "save() happy path",
-        () -> assertEquals(ID, result.getId().value(), "id"),
-        () -> assertEquals(NAME, result.getName().value(), "name"),
-        () -> assertEquals(EMAIL, result.getEmail().value(), "email"));
+        "Verificación de guardado de usuario",
+        () -> assertEquals(ID, result.getId().value()),
+        () -> assertEquals(NAME, result.getName().value()),
+        () -> assertEquals(EMAIL, result.getEmail().value()));
   }
 
-  // ── save() — INSERT fails → PersistenceException
-
   @Test
-  @DisplayName("save() throws PersistenceException when INSERT raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando el INSERT falla por error de SQL")
   void shouldThrowPersistenceExceptionWhenInsertFails() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenReturn(statement);
     when(statement.executeUpdate()).thenThrow(new SQLException("Insert failed"));
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.save(userModel),
-        "must throw PersistenceException when INSERT raises SQLException");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.save(userModel));
   }
 
-  // ── save() → findByIdOrFail — user not found after insert → UserNotFoundException
-
   @Test
-  @DisplayName("save() throws UserNotFoundException when the saved user cannot be found")
+  @DisplayName("Debe lanzar UserNotFoundException cuando no se encuentra el usuario guardado tras el INSERT")
   void shouldThrowUserNotFoundExceptionWhenUserNotFoundAfterSave() throws SQLException {
     // Arrange
     configureStatementAndResultSet();
     when(resultSet.next()).thenReturn(false);
 
-    // Act + Assert
-    assertThrows(
-        UserNotFoundException.class,
-        () -> repository.save(userModel),
-        "must throw UserNotFoundException when SELECT returns no rows after INSERT");
+    // Act & Assert
+    assertThrows(UserNotFoundException.class, () -> repository.save(userModel));
   }
 
-  // ── update() — happy path
-
   @Test
-  @DisplayName("update() executes UPDATE and returns the refreshed user fetched by id")
+  @DisplayName("Debe ejecutar el UPDATE y retornar el usuario actualizado consultado por ID")
   void shouldUpdateUserAndReturnById() throws SQLException {
     // Arrange
     configureStatementAndResultSet();
@@ -156,29 +139,22 @@ class UserRepositoryMySQLTest {
     final UserModel result = repository.update(userModel);
 
     // Assert
-    assertEquals(ID, result.getId().value(), "id must match the updated user");
+    assertEquals(ID, result.getId().value());
   }
 
-  // ── update() — UPDATE fails → PersistenceException
-
   @Test
-  @DisplayName("update() throws PersistenceException when UPDATE raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando el UPDATE falla por error de SQL")
   void shouldThrowPersistenceExceptionWhenUpdateFails() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenReturn(statement);
     when(statement.executeUpdate()).thenThrow(new SQLException("Update failed"));
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.update(userModel),
-        "must throw PersistenceException when UPDATE raises SQLException");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.update(userModel));
   }
 
-  // ── getById() — row found → Optional.of(user)
-
   @Test
-  @DisplayName("getById() returns Optional.of(user) when a matching row exists")
+  @DisplayName("Debe retornar un Optional con el usuario cuando existe una fila que coincide con el ID")
   void shouldReturnUserWhenFound() throws SQLException {
     // Arrange
     configureStatementAndResultSet();
@@ -190,15 +166,13 @@ class UserRepositoryMySQLTest {
 
     // Assert
     assertAll(
-        "getById() found",
-        () -> assertTrue(result.isPresent(), "must be present"),
-        () -> assertEquals(ID, result.get().getId().value(), "id"));
+        "Verificación de búsqueda por ID",
+        () -> assertTrue(result.isPresent()),
+        () -> assertEquals(ID, result.get().getId().value()));
   }
 
-  // ── getById() — no row → Optional.empty()
-
   @Test
-  @DisplayName("getById() returns Optional.empty() when no matching row exists")
+  @DisplayName("Debe retornar un Optional vacío cuando no existe una fila con el ID proporcionado")
   void shouldReturnEmptyWhenNotFound() throws SQLException {
     // Arrange
     configureStatementAndResultSet();
@@ -208,45 +182,32 @@ class UserRepositoryMySQLTest {
     final Optional<UserModel> result = repository.getById(userId);
 
     // Assert
-    assertTrue(result.isEmpty(), "must return Optional.empty() when no row matches the id");
+    assertTrue(result.isEmpty());
   }
 
-  // ── getById() — SQLException → PersistenceException (from prepareStatement)
-
   @Test
-  @DisplayName("getById() throws PersistenceException when prepareStatement raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando la preparación de la consulta falla")
   void shouldThrowPersistenceExceptionOnGetByIdFailure() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenThrow(new SQLException("Query failed"));
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.getById(userId),
-        "must throw PersistenceException when prepareStatement raises SQLException");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.getById(userId));
   }
 
-  // ── getById() — SQLException → PersistenceException (from executeQuery, inside try body)
-
   @Test
-  @DisplayName("getById() throws PersistenceException when executeQuery raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando la ejecución de la consulta de búsqueda falla")
   void shouldThrowPersistenceExceptionWhenGetByIdExecuteQueryFails() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenReturn(statement);
     when(statement.executeQuery()).thenThrow(new SQLException("Execute query failed"));
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.getById(userId),
-        "must throw PersistenceException when executeQuery raises SQLException inside the try block");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.getById(userId));
   }
 
-  // ── getById() — SQLException → PersistenceException (from statement.close() after normal exit)
-
   @Test
-  @DisplayName(
-      "getById() throws PersistenceException when PreparedStatement.close() raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando el cierre del PreparedStatement falla")
   void shouldThrowPersistenceExceptionWhenGetByIdStatementCloseFails() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenReturn(statement);
@@ -254,17 +215,12 @@ class UserRepositoryMySQLTest {
     when(resultSet.next()).thenReturn(false);
     doThrow(new SQLException("Close failed")).when(statement).close();
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.getById(userId),
-        "must throw PersistenceException when PreparedStatement.close() raises SQLException after normal body exit");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.getById(userId));
   }
 
-  // ── getByEmail() — row found → Optional.of(user)
-
   @Test
-  @DisplayName("getByEmail() returns Optional.of(user) when a matching row exists")
+  @DisplayName("Debe retornar un Optional con el usuario cuando existe una fila que coincide con el email")
   void shouldReturnUserByEmailWhenFound() throws SQLException {
     // Arrange
     configureStatementAndResultSet();
@@ -276,15 +232,13 @@ class UserRepositoryMySQLTest {
 
     // Assert
     assertAll(
-        "getByEmail() found",
-        () -> assertTrue(result.isPresent(), "must be present"),
-        () -> assertEquals(EMAIL, result.get().getEmail().value(), "email"));
+        "Verificación de búsqueda por email",
+        () -> assertTrue(result.isPresent()),
+        () -> assertEquals(EMAIL, result.get().getEmail().value()));
   }
 
-  // ── getByEmail() — no row → Optional.empty()
-
   @Test
-  @DisplayName("getByEmail() returns Optional.empty() when no matching row exists")
+  @DisplayName("Debe retornar un Optional vacío cuando no existe una fila con el email proporcionado")
   void shouldReturnEmptyWhenEmailNotFound() throws SQLException {
     // Arrange
     configureStatementAndResultSet();
@@ -294,46 +248,32 @@ class UserRepositoryMySQLTest {
     final Optional<UserModel> result = repository.getByEmail(userEmail);
 
     // Assert
-    assertTrue(result.isEmpty(), "must return Optional.empty() when no row matches the email");
+    assertTrue(result.isEmpty());
   }
 
-  // ── getByEmail() — SQLException → PersistenceException (from prepareStatement)
-
   @Test
-  @DisplayName("getByEmail() throws PersistenceException when prepareStatement raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando falla la búsqueda por email por error de SQL")
   void shouldThrowPersistenceExceptionOnGetByEmailFailure() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenThrow(new SQLException("Query failed"));
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.getByEmail(userEmail),
-        "must throw PersistenceException when prepareStatement raises SQLException");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.getByEmail(userEmail));
   }
 
-  // ── getByEmail() — SQLException → PersistenceException (from executeQuery, inside try body)
-
   @Test
-  @DisplayName("getByEmail() throws PersistenceException when executeQuery raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando falla la ejecución de la búsqueda por email")
   void shouldThrowPersistenceExceptionWhenGetByEmailExecuteQueryFails() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenReturn(statement);
     when(statement.executeQuery()).thenThrow(new SQLException("Execute query failed"));
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.getByEmail(userEmail),
-        "must throw PersistenceException when executeQuery raises SQLException inside the try block");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.getByEmail(userEmail));
   }
 
-  // ── getByEmail() — SQLException → PersistenceException (from statement.close() after normal
-  // exit)
-
   @Test
-  @DisplayName(
-      "getByEmail() throws PersistenceException when PreparedStatement.close() raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando falla el cierre del recurso en búsqueda por email")
   void shouldThrowPersistenceExceptionWhenGetByEmailStatementCloseFails() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenReturn(statement);
@@ -341,17 +281,12 @@ class UserRepositoryMySQLTest {
     when(resultSet.next()).thenReturn(false);
     doThrow(new SQLException("Close failed")).when(statement).close();
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.getByEmail(userEmail),
-        "must throw PersistenceException when PreparedStatement.close() raises SQLException after normal body exit");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.getByEmail(userEmail));
   }
 
-  // ── getAll() — happy path
-
   @Test
-  @DisplayName("getAll() returns one model per row in the result set")
+  @DisplayName("Debe retornar una lista con todos los usuarios presentes en la base de datos")
   void shouldReturnAllUsers() throws SQLException {
     // Arrange
     configureStatementAndResultSet();
@@ -363,52 +298,38 @@ class UserRepositoryMySQLTest {
 
     // Assert
     assertAll(
-        "getAll() happy path",
-        () -> assertEquals(1, result.size(), "list size"),
-        () -> assertEquals(ID, result.get(0).getId().value(), "first user id"));
+        "Verificación de obtención de todos los usuarios",
+        () -> assertEquals(1, result.size()),
+        () -> assertEquals(ID, result.get(0).getId().value()));
   }
 
-  // ── getAll() — SQLException → PersistenceException
-
   @Test
-  @DisplayName("getAll() throws PersistenceException when the query raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando la consulta de todos los usuarios falla")
   void shouldThrowPersistenceExceptionOnGetAllFailure() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenThrow(new SQLException("Query failed"));
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.getAll(),
-        "must throw PersistenceException when SELECT raises SQLException");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.getAll());
   }
 
-  // ── delete() — happy path
-
   @Test
-  @DisplayName("delete() executes DELETE without throwing")
+  @DisplayName("Debe ejecutar el DELETE sin lanzar excepciones cuando el proceso es exitoso")
   void shouldDeleteUserWithoutThrowing() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenReturn(statement);
 
-    // Act + Assert
-    assertDoesNotThrow(
-        () -> repository.delete(userId),
-        "delete() must not throw when DELETE executes successfully");
+    // Act & Assert
+    assertDoesNotThrow(() -> repository.delete(userId));
   }
 
-  // ── delete() — SQLException → PersistenceException
-
   @Test
-  @DisplayName("delete() throws PersistenceException when DELETE raises SQLException")
+  @DisplayName("Debe lanzar PersistenceException cuando el DELETE falla por error de SQL")
   void shouldThrowPersistenceExceptionWhenDeleteFails() throws SQLException {
     // Arrange
     when(connection.prepareStatement(anyString())).thenThrow(new SQLException("Delete failed"));
 
-    // Act + Assert
-    assertThrows(
-        PersistenceException.class,
-        () -> repository.delete(userId),
-        "must throw PersistenceException when DELETE raises SQLException");
+    // Act & Assert
+    assertThrows(PersistenceException.class, () -> repository.delete(userId));
   }
 }
