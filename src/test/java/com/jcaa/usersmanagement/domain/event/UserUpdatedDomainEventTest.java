@@ -18,18 +18,15 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests para UserUpdatedDomainEvent.
  *
- * <p>Misma estructura que UserCreatedDomainEvent pero con el nombre de evento "user.updated". Se
- * usan datos de fixture distintos (ADMIN / INACTIVE) para garantizar que el payload refleja
- * correctamente los datos del usuario actualizado y no confundirlo con los tests de creación.
+ * <p>Verifica que el evento de actualización capture correctamente los datos del usuario,
+ * el nombre del evento y el instante en que ocurrió.
  */
 @DisplayName("UserUpdatedDomainEvent")
 class UserUpdatedDomainEventTest {
 
-  // ── Arranges globales
   private static final String ID = "user-003";
   private static final String NAME = "Jane Doe";
   private static final String EMAIL = "jane.doe@example.com";
-  // fromHash() acepta cualquier string no-null: evita el coste de BCrypt en tests
   private static final String HASH = "$2a$12$abcdefghijklmnopqrstuO";
 
   private UserModel user;
@@ -46,12 +43,10 @@ class UserUpdatedDomainEventTest {
             UserStatus.INACTIVE);
   }
 
-  // ── eventName
-
   @Test
-  @DisplayName("eventName() debe retornar la constante 'user.updated'")
+  @DisplayName("Debe retornar el nombre de evento correcto")
   void shouldHaveEventNameUserUpdated() {
-    // Arrange — el usuario ya está en el @BeforeEach
+    // Arrange
     final UserUpdatedDomainEvent event = new UserUpdatedDomainEvent(user);
 
     // Act
@@ -61,10 +56,8 @@ class UserUpdatedDomainEventTest {
     assertEquals("user.updated", result);
   }
 
-  // ── occurredOn
-
   @Test
-  @DisplayName("occurredOn() no debe ser nulo y debe quedar acotado al instante de construcción")
+  @DisplayName("Debe registrar el instante de ocurrencia al momento de la creación")
   void shouldRecordOccurredOnAtCreationTime() {
     // Arrange
     final LocalDateTime before = LocalDateTime.now();
@@ -75,19 +68,13 @@ class UserUpdatedDomainEventTest {
     final LocalDateTime occurredOn = event.getOccurredOn();
 
     // Assert
-    assertNotNull(occurredOn, "occurredOn no debe ser null");
-    assertFalse(
-        occurredOn.isBefore(before),
-        "occurredOn debe ser >= al instante anterior a la construcción");
-    assertFalse(
-        occurredOn.isAfter(after),
-        "occurredOn debe ser <= al instante posterior a la construcción");
+    assertNotNull(occurredOn);
+    assertFalse(occurredOn.isBefore(before));
+    assertFalse(occurredOn.isAfter(after));
   }
 
-  // ── user()
-
   @Test
-  @DisplayName("user() debe devolver la misma instancia de UserModel recibida en el constructor")
+  @DisplayName("Debe devolver la misma instancia de usuario recibida")
   void shouldReturnSameUserInstance() {
     // Arrange
     final UserUpdatedDomainEvent event = new UserUpdatedDomainEvent(user);
@@ -99,10 +86,8 @@ class UserUpdatedDomainEventTest {
     assertSame(user, result);
   }
 
-  // ── payload()
-
   @Test
-  @DisplayName("payload() debe contener exactamente los cinco campos del usuario actualizado")
+  @DisplayName("Debe contener todos los campos del usuario actualizado en el payload")
   void shouldReturnPayloadWithAllUserFields() {
     // Arrange
     final UserUpdatedDomainEvent event = new UserUpdatedDomainEvent(user);
@@ -113,11 +98,11 @@ class UserUpdatedDomainEventTest {
     // Assert
     assertAll(
         "payload de UserUpdatedDomainEvent",
-        () -> assertEquals(5, payload.size(), "tamaño del mapa"),
-        () -> assertEquals(ID, payload.get("id"), "id"),
-        () -> assertEquals(NAME, payload.get("name"), "name"),
-        () -> assertEquals(EMAIL, payload.get("email"), "email"),
-        () -> assertEquals(UserRole.ADMIN.name(), payload.get("role"), "role"),
-        () -> assertEquals(UserStatus.INACTIVE.name(), payload.get("status"), "status"));
+        () -> assertEquals(5, payload.size()),
+        () -> assertEquals(ID, payload.get("id")),
+        () -> assertEquals(NAME, payload.get("name")),
+        () -> assertEquals(EMAIL, payload.get("email")),
+        () -> assertEquals(UserRole.ADMIN.name(), payload.get("role")),
+        () -> assertEquals(UserStatus.INACTIVE.name(), payload.get("status")));
   }
 }
