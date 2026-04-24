@@ -26,11 +26,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/**
- * Tests para DeleteUserService.
- *
- * <p>Cubre: flujo feliz (delete invocado), usuario no encontrado y validación del command.
- */
 @DisplayName("DeleteUserService")
 @ExtendWith(MockitoExtension.class)
 class DeleteUserServiceTest {
@@ -48,14 +43,11 @@ class DeleteUserServiceTest {
     }
   }
 
-  // ── flujo feliz
-
   @Test
-  @DisplayName("execute() invoca deleteUserPort cuando el usuario existe")
+  @DisplayName("Debe invocar deleteUserPort cuando el usuario existe")
   void shouldDeleteWhenUserExists() {
     // Arrange
     final DeleteUserCommand command = new DeleteUserCommand("u-001");
-
     final UserModel existing =
         new UserModel(
             new UserId("u-001"),
@@ -64,7 +56,6 @@ class DeleteUserServiceTest {
             UserPassword.fromHash("$2a$12$abcdefghijklmnopqrstuO"),
             UserRole.ADMIN,
             UserStatus.ACTIVE);
-
     when(getUserByIdPort.getById(any())).thenReturn(Optional.of(existing));
 
     // Act
@@ -74,14 +65,11 @@ class DeleteUserServiceTest {
     verify(deleteUserPort).delete(new UserId("u-001"));
   }
 
-  // ── usuario no encontrado
-
   @Test
-  @DisplayName("execute() lanza UserNotFoundException cuando el id no existe")
+  @DisplayName("Debe lanzar UserNotFoundException cuando el id no existe")
   void shouldThrowWhenUserNotFound() {
     // Arrange
     final DeleteUserCommand command = new DeleteUserCommand("no-existe");
-
     when(getUserByIdPort.getById(any())).thenReturn(Optional.empty());
 
     // Act & Assert
@@ -89,10 +77,8 @@ class DeleteUserServiceTest {
     verify(deleteUserPort, never()).delete(any());
   }
 
-  // ── validación del command
-
   @Test
-  @DisplayName("execute() lanza ConstraintViolationException cuando el id está en blanco")
+  @DisplayName("Debe lanzar ConstraintViolationException cuando el id está en blanco")
   void shouldThrowWhenCommandIsInvalid() {
     // Arrange
     final DeleteUserCommand command = new DeleteUserCommand("  ");
