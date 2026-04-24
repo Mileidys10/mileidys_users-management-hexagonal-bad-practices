@@ -11,19 +11,16 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests para UserDeletedDomainEvent.
  *
- * <p>Este evento es el más simple: recibe un UserId y genera un payload con una sola entrada. Se
- * verifica que el nombre del evento sea correcto, que occurredOn quede registrado, que el accessor
- * userId() devuelva la misma referencia y que el payload contenga exactamente un campo.
+ * <p>Verifica que el evento de eliminación capture correctamente el identificador del usuario,
+ * el nombre del evento y el instante en que ocurrió.
  */
 @DisplayName("UserDeletedDomainEvent")
 class UserDeletedDomainEventTest {
 
   private static final String ID = "user-002";
 
-  // ── eventName
-
   @Test
-  @DisplayName("eventName() debe retornar la constante 'user.deleted'")
+  @DisplayName("Debe retornar el nombre de evento correcto")
   void shouldHaveEventNameUserDeleted() {
     // Arrange
     final UserDeletedDomainEvent event = new UserDeletedDomainEvent(new UserId(ID));
@@ -35,10 +32,8 @@ class UserDeletedDomainEventTest {
     assertEquals("user.deleted", result);
   }
 
-  // ── occurredOn
-
   @Test
-  @DisplayName("occurredOn() no debe ser nulo y debe quedar acotado al instante de construcción")
+  @DisplayName("Debe registrar el instante de ocurrencia al momento de la creación")
   void shouldRecordOccurredOnAtCreationTime() {
     // Arrange
     final LocalDateTime before = LocalDateTime.now();
@@ -49,19 +44,13 @@ class UserDeletedDomainEventTest {
     final LocalDateTime occurredOn = event.getOccurredOn();
 
     // Assert
-    assertNotNull(occurredOn, "occurredOn no debe ser null");
-    assertFalse(
-        occurredOn.isBefore(before),
-        "occurredOn debe ser >= al instante anterior a la construcción");
-    assertFalse(
-        occurredOn.isAfter(after),
-        "occurredOn debe ser <= al instante posterior a la construcción");
+    assertNotNull(occurredOn);
+    assertFalse(occurredOn.isBefore(before));
+    assertFalse(occurredOn.isAfter(after));
   }
 
-  // ── userId()
-
   @Test
-  @DisplayName("userId() debe devolver la misma instancia de UserId recibida en el constructor")
+  @DisplayName("Debe devolver la misma instancia de identificador de usuario recibida")
   void shouldReturnSameUserIdInstance() {
     // Arrange
     final UserId userId = new UserId(ID);
@@ -74,10 +63,8 @@ class UserDeletedDomainEventTest {
     assertSame(userId, result);
   }
 
-  // ── payload()
-
   @Test
-  @DisplayName("payload() debe contener únicamente la entrada 'id' con el valor del UserId")
+  @DisplayName("Debe contener únicamente el identificador del usuario en el payload")
   void shouldReturnPayloadWithOnlyUserId() {
     // Arrange
     final UserDeletedDomainEvent event = new UserDeletedDomainEvent(new UserId(ID));
@@ -86,9 +73,7 @@ class UserDeletedDomainEventTest {
     final Map<String, String> payload = event.payload();
 
     // Assert
-    assertAll(
-        "payload de UserDeletedDomainEvent",
-        () -> assertEquals(1, payload.size(), "el mapa debe tener exactamente 1 entrada"),
-        () -> assertEquals(ID, payload.get("id"), "id"));
+    assertEquals(1, payload.size());
+    assertEquals(ID, payload.get("id"));
   }
 }
