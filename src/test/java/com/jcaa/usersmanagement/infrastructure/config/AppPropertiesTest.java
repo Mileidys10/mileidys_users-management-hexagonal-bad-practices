@@ -11,11 +11,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for AppProperties.
+ * Tests para AppProperties.
  *
- * <p>Covers: constructor happy path, {@code doLoad()} exceptional branches (null stream and failing
- * stream), {@code get()} (existing key and missing key), and {@code getInt()} (valid numeric value
- * and non-numeric value).
+ * <p>Verifica la carga de propiedades desde el classpath, la gestión de flujos de entrada
+ * (InputStream), el manejo de errores de configuración y la recuperación de valores tipo String y
+ * enteros.
  */
 @DisplayName("AppProperties")
 class AppPropertiesTest {
@@ -34,53 +34,42 @@ class AppPropertiesTest {
     appProperties = new AppProperties();
   }
 
-  // ── constructor — happy path
-
   @Test
-  @DisplayName("constructor loads application.properties without throwing")
+  @DisplayName(
+      "Debe cargar correctamente el archivo de propiedades del sistema al instanciar la clase")
   void shouldLoadPropertiesFileWithoutThrowing() {
-    // Assert (Arrange + Act done in @BeforeEach)
-    assertNotNull(
-        appProperties, "constructor must not throw when the file exists in the classpath");
+    // Assert
+    assertNotNull(appProperties);
   }
 
-  // ── doLoad() — null stream (file not found)
-
   @Test
-  @DisplayName("constructor(InputStream) loads properties from a valid stream")
+  @DisplayName("Debe cargar las propiedades correctamente desde un flujo de entrada válido")
   void shouldLoadPropertiesFromValidStream() throws IOException {
     // Arrange
     final String content = "custom.key=custom.value\n";
 
-    // Act + Assert
+    // Act
     try (final InputStream stream =
         new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
       final AppProperties loaded = new AppProperties(stream);
-      assertEquals(
-          "custom.value",
-          loaded.get("custom.key"),
-          "must load the property value from the injected stream");
+
+      // Assert
+      assertEquals("custom.value", loaded.get("custom.key"));
     }
   }
 
   @Test
-  @DisplayName(
-      "constructor(InputStream) throws NullPointerException when stream is null (file not found)")
+  @DisplayName("Debe lanzar NullPointerException cuando el flujo de entrada proporcionado es nulo")
   void shouldThrowNullPointerExceptionWhenStreamIsNull() {
-    // Arrange
-    // Act + Assert
-    assertThrows(
-        NullPointerException.class,
-        () -> new AppProperties(null),
-        "must throw NullPointerException when the InputStream is null");
+    // Act & Assert
+    assertThrows(NullPointerException.class, () -> new AppProperties(null));
   }
 
-  // ── doLoad() — IOException on read
-
   @Test
-  @DisplayName("constructor throws ConfigurationException when the stream fails on read")
+  @DisplayName(
+      "Debe lanzar ConfigurationException cuando ocurre un error de lectura en el flujo de entrada")
   void shouldThrowConfigurationExceptionOnIOException() throws IOException {
-    // Arrange — InputStream that throws IOException on every read attempt
+    // Arrange
     try (final InputStream failingStream =
         new InputStream() {
           @Override
@@ -95,63 +84,46 @@ class AppPropertiesTest {
           }
         }) {
 
-      // Act + Assert
-      assertThrows(
-          ConfigurationException.class,
-          () -> new AppProperties(failingStream),
-          "must throw ConfigurationException when the InputStream throws IOException on read");
+      // Act & Assert
+      assertThrows(ConfigurationException.class, () -> new AppProperties(failingStream));
     }
   }
 
-  // ── get()
-
   @Test
-  @DisplayName("get() returns the correct value for an existing key")
+  @DisplayName("Debe retornar el valor correcto cuando la clave existe en las propiedades")
   void shouldReturnCorrectValueForExistingKey() {
     // Act
     final String result = appProperties.get(KEY_STRING);
 
     // Assert
-    assertEquals(
-        EXPECTED_STRING,
-        result,
-        "value must match the one defined in the test application.properties");
+    assertEquals(EXPECTED_STRING, result);
   }
 
   @Test
-  @DisplayName("get() throws NullPointerException when the key does not exist")
+  @DisplayName("Debe lanzar NullPointerException detallando la clave cuando esta no existe")
   void shouldThrowNullPointerExceptionForMissingKey() {
-    // Act + Assert
+    // Act & Assert
     final NullPointerException exception =
         assertThrows(NullPointerException.class, () -> appProperties.get(KEY_MISSING));
 
-    assertTrue(
-        exception.getMessage().contains(KEY_MISSING),
-        "error message must include the searched key to ease diagnosis");
+    assertTrue(exception.getMessage().contains(KEY_MISSING));
   }
 
-  // ── getInt()
-
   @Test
-  @DisplayName("getInt() returns the correct integer for a numeric key")
+  @DisplayName("Debe retornar el valor entero parseado correctamente para una clave numérica")
   void shouldReturnParsedIntForNumericKey() {
     // Act
     final int result = appProperties.getInt(KEY_INT);
 
     // Assert
-    assertEquals(
-        EXPECTED_INT,
-        result,
-        "integer value must match the one defined in the test application.properties");
+    assertEquals(EXPECTED_INT, result);
   }
 
   @Test
-  @DisplayName("getInt() throws NumberFormatException when the value is not a valid integer")
+  @DisplayName(
+      "Debe lanzar NumberFormatException cuando el valor asociado a la clave no es un entero válido")
   void shouldThrowNumberFormatExceptionForNonIntegerValue() {
-    // Act + Assert
-    assertThrows(
-        NumberFormatException.class,
-        () -> appProperties.getInt(KEY_STRING),
-        "must throw NumberFormatException when the key value is a non-numeric string");
+    // Act & Assert
+    assertThrows(NumberFormatException.class, () -> appProperties.getInt(KEY_STRING));
   }
 }
